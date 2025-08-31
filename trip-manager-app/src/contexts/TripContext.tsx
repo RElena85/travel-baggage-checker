@@ -1,15 +1,16 @@
 import React, { createContext, useContext, ReactNode } from 'react';
+import { Trip } from '../types';
 import useTripData from '../hooks/useTripData';
 
 interface TripContextType {
-  trips: any[];
+  trips: Trip[];
   loading: boolean;
   addTrip: (tripName: string, items: { name: string }[]) => void;
   copyTrip: (tripId: string) => void;
   updateItemStatus: (tripId: string, itemId: string, field: 'isIn' | 'isBack') => void;
   addItemToTrip: (tripId: string, itemName: string) => void;
   deleteTrip: (tripId: string) => void;
-  getTrip: (tripId: string) => any;
+  getTrip: (tripId: string) => Trip | undefined;
   clearAllTrips: () => void;
   exportTrips: () => string;
   importTrips: (tripsJson: string) => boolean;

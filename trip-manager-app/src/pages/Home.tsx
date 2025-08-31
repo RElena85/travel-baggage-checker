@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTripContext } from '../contexts/TripContext';
+import { Item } from '../types';
 import '../styles/components.css';
 
 const Home: React.FC = () => {
@@ -61,7 +62,7 @@ const Home: React.FC = () => {
                                     <div className="stat-card">
                                         <span className="stat-number">
                                             {trips.reduce((sum, trip) => 
-                                                sum + trip.items.filter(item => item.isIn).length, 0
+                                                sum + trip.items.filter((item: Item) => item.isIn).length, 0
                                             )}
                                         </span>
                                         <span className="stat-label">Items Packed</span>

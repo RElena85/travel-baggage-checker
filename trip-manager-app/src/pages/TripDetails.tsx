@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ItemList from '../components/ItemList';
 import { useTripContext } from '../contexts/TripContext';
+import { Item } from '../types';
 
 const TripDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -34,8 +35,8 @@ const TripDetails: React.FC = () => {
     }
 
     const totalItems = trip.items.length;
-    const packedItems = trip.items.filter(item => item.isIn).length;
-    const returnedItems = trip.items.filter(item => item.isBack).length;
+    const packedItems = trip.items.filter((item: Item) => item.isIn).length;
+    const returnedItems = trip.items.filter((item: Item) => item.isBack).length;
     const packedPercentage = totalItems > 0 ? Math.round((packedItems / totalItems) * 100) : 0;
     const returnedPercentage = totalItems > 0 ? Math.round((returnedItems / totalItems) * 100) : 0;
 
