@@ -1,11 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import TripList from '../components/TripList';
-import useTripData from '../hooks/useTripData';
+import { useTripContext } from '../contexts/TripContext';
 import '../styles/components.css';
 
 const Home: React.FC = () => {
-    const { trips, loading, copyTrip, deleteTrip } = useTripData();
+    const { trips } = useTripContext();
 
     return (
         <div className="app">
@@ -18,36 +17,57 @@ const Home: React.FC = () => {
                         </p>
                     </div>
                     
-                    <div className="home-actions">
-                        <Link to="/create-trip" className="create-trip-button">
-                            Create New Trip
-                        </Link>
-                    </div>
-
                     <div className="page-content">
-                        {loading ? (
-                            <div className="loading">
-                                <div className="spinner"></div>
-                                <p>Loading your trips...</p>
-                            </div>
-                        ) : trips.length === 0 ? (
-                            <div className="empty-trips">
-                                <div className="empty-icon">🧳</div>
-                                <h3 className="empty-title">No trips yet!</h3>
-                                <p className="empty-description">
-                                    Start by creating your first trip. Add items to your packing list 
-                                    and track what you've packed and what you need to bring back.
-                                </p>
-                                <Link to="/create-trip" className="btn btn-primary btn-lg mt-6">
-                                    🚀 Create Your First Trip
+                        <div className="menu-options">
+                            <div className="menu-grid">
+                                <Link to="/trips" className="menu-card">
+                                    <div className="menu-card-icon">🧳</div>
+                                    <h3 className="menu-card-title">My Trips</h3>
+                                    <p className="menu-card-description">
+                                        View and manage all your trips
+                                    </p>
+                                    <div className="menu-card-badge">
+                                        {trips.length} trip{trips.length !== 1 ? 's' : ''}
+                                    </div>
+                                </Link>
+
+                                <Link to="/create-trip" className="menu-card">
+                                    <div className="menu-card-icon">➕</div>
+                                    <h3 className="menu-card-title">New Trip</h3>
+                                    <p className="menu-card-description">
+                                        Create a new travel adventure
+                                    </p>
+                                    <div className="menu-card-action">
+                                        Start planning →
+                                    </div>
                                 </Link>
                             </div>
-                        ) : (
-                            <TripList 
-                                trips={trips}
-                                onCopyTrip={copyTrip}
-                                onDeleteTrip={deleteTrip}
-                            />
+                        </div>
+
+                        {trips.length > 0 && (
+                            <div className="quick-stats">
+                                <h3>Quick Stats</h3>
+                                <div className="stats-grid">
+                                    <div className="stat-card">
+                                        <span className="stat-number">{trips.length}</span>
+                                        <span className="stat-label">Total Trips</span>
+                                    </div>
+                                    <div className="stat-card">
+                                        <span className="stat-number">
+                                            {trips.reduce((sum, trip) => sum + trip.items.length, 0)}
+                                        </span>
+                                        <span className="stat-label">Total Items</span>
+                                    </div>
+                                    <div className="stat-card">
+                                        <span className="stat-number">
+                                            {trips.reduce((sum, trip) => 
+                                                sum + trip.items.filter(item => item.isIn).length, 0
+                                            )}
+                                        </span>
+                                        <span className="stat-label">Items Packed</span>
+                                    </div>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>

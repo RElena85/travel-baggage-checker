@@ -1,15 +1,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import TripForm from '../components/TripForm';
-import useTripData from '../hooks/useTripData';
+import { useTripContext } from '../contexts/TripContext';
 
 const CreateTrip: React.FC = () => {
     const navigate = useNavigate();
-    const { addTrip } = useTripData();
+    const { addTrip } = useTripContext();
 
     const handleSaveTrip = (tripName: string, items: { name: string }[]) => {
         addTrip(tripName, items);
-        navigate('/');
+        navigate('/trips'); // Navegar a la lista de trips después de crear
     };
 
     return (

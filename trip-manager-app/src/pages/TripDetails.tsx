@@ -1,11 +1,11 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ItemList from '../components/ItemList';
-import useTripData from '../hooks/useTripData';
+import { useTripContext } from '../contexts/TripContext';
 
 const TripDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const { trips, updateItemStatus } = useTripData();
+    const { trips, updateItemStatus } = useTripContext();
     const trip = trips.find(t => t.id === id);
 
     if (!trip) {
