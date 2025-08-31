@@ -2,10 +2,10 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter, MemoryRouter } from 'react-router-dom';
-import App from '../App';
-import Home from '../pages/Home';
-import TripDetails from '../pages/TripDetails';
-import CreateTrip from '../pages/CreateTrip';
+import App from './App';
+import Home from './pages/Home';
+import TripDetails from './pages/TripDetails';
+import CreateTrip from './pages/CreateTrip';
 
 // Mock localStorage
 const mockLocalStorage = {

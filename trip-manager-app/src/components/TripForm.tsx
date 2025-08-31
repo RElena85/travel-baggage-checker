@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { Trip, Item } from '../types';
+import { Link } from 'react-router-dom';
 
 interface TripFormProps {
-    onSubmit: (trip: Omit<Trip, 'id' | 'createdAt' | 'updatedAt'>) => void;
-    trip?: Trip;
+    onSave: (tripName: string, items: { name: string }[]) => void;
 }
 
-const TripForm: React.FC<TripFormProps> = ({ onSubmit, trip }) => {
-    const [tripName, setTripName] = useState(trip ? trip.name : '');
-    const [items, setItems] = useState<Item[]>(trip ? trip.items : []);
+const TripForm: React.FC<TripFormProps> = ({ onSave }) => {
+    const [tripName, setTripName] = useState('');
+    const [items, setItems] = useState<{ name: string }[]>([]);
+    const [newItemName, setNewItemName] = useState('');
 
     const handleItemNameChange = (index: number, name: string) => {
         const newItems = [...items];
@@ -19,80 +19,125 @@ const TripForm: React.FC<TripFormProps> = ({ onSubmit, trip }) => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (tripName.trim()) {
-            onSubmit({ 
-                name: tripName.trim(), 
-                items: items.filter(item => item.name.trim())
-            });
+            const validItems = items.filter(item => item.name.trim() !== '');
+            onSave(tripName.trim(), validItems);
         }
     };
 
     const addItem = () => {
-        const newItem: Item = {
-            id: `temp-${Date.now()}-${Math.random()}`,
-            name: '',
-            isIn: false,
-            isBack: false
-        };
-        setItems([...items, newItem]);
+        if (newItemName.trim()) {
+            setItems([...items, { name: newItemName.trim() }]);
+            setNewItemName('');
+        }
     };
 
     const removeItem = (index: number) => {
         setItems(items.filter((_, i) => i !== index));
     };
 
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addItem();
+        }
+    };
+
     return (
-        <form onSubmit={handleSubmit} className="trip-form">
-            <div className="form-group">
-                <label>
-                    Trip Name:
+        <div className="trip-form">
+            <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                    <label className="form-label" htmlFor="trip-name">
+                        🎯 Trip Name
+                    </label>
                     <input
+                        id="trip-name"
                         type="text"
+                        className="form-input"
                         value={tripName}
                         onChange={(e) => setTripName(e.target.value)}
                         required
-                        placeholder="Enter trip name"
+                        placeholder="e.g., Weekend in Paris, Business Trip to Tokyo..."
                         data-testid="trip-name-input"
                     />
-                </label>
-            </div>
-            <div className="items-section">
-                <h3>Items</h3>
-                {items.map((item, index) => (
-                    <div key={item.id} className="item-input">
-                        <input
-                            type="text"
-                            value={item.name}
-                            onChange={(e) => handleItemNameChange(index, e.target.value)}
-                            placeholder="Item name"
-                            data-testid={`item-input-${index}`}
-                        />
-                        <button 
-                            type="button" 
-                            onClick={() => removeItem(index)}
-                            className="remove-item-button"
-                            data-testid={`remove-item-${index}`}
+                </div>
+
+                <div className="items-section">
+                    <h3 className="items-section-title">Add Items to Pack</h3>
+                    
+                    <div className="item-input-group">
+                        <div className="item-input-wrapper">
+                            <input
+                                type="text"
+                                className="form-input"
+                                value={newItemName}
+                                onChange={(e) => setNewItemName(e.target.value)}
+                                onKeyPress={handleKeyPress}
+                                placeholder="e.g., Passport, Phone charger, Sunscreen..."
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={addItem}
+                            className="add-item-btn"
+                            data-testid="add-item-button"
+                            title="Add item"
                         >
-                            Remove
+                            ➕
                         </button>
                     </div>
-                ))}
-                <button 
-                    type="button" 
-                    onClick={addItem}
-                    className="add-item-button"
-                    data-testid="add-item-button"
-                >
-                    Add Item
-                </button>
-            </div>
-            <button 
-                type="submit" 
-                className="save-trip-button"
-                data-testid="save-trip-button"
-            >
-                Save Trip
-            </button>
-        </form>
+
+                    {items.length > 0 && (
+                        <div className="current-items">
+                            <h4 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--spacing-md)', color: 'var(--gray-700)' }}>
+                                📋 Your Packing List ({items.length} items)
+                            </h4>
+                            {items.map((item, index) => (
+                                <div key={index} className="current-item">
+                                    <input
+                                        type="text"
+                                        value={item.name}
+                                        onChange={(e) => handleItemNameChange(index, e.target.value)}
+                                        data-testid={`item-input-${index}`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeItem(index)}
+                                        className="remove-item-btn"
+                                        title="Remove item"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {items.length === 0 && (
+                        <div className="empty-items">
+                            <div className="empty-items-icon">📝</div>
+                            <p>Start adding items to your packing list!</p>
+                            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--gray-500)', marginTop: 'var(--spacing-sm)' }}>
+                                Tip: Press Enter after typing an item name to quickly add it
+                            </p>
+                        </div>
+                    )}
+                </div>
+
+                <div className="form-actions">
+                    <Link to="/" className="btn btn-secondary">
+                        ← Cancel
+                    </Link>
+                    <button
+                        type="submit"
+                        className="btn btn-primary btn-lg"
+                        disabled={!tripName.trim()}
+                        data-testid="save-trip-button"
+                    >
+                        🚀 Create Trip
+                    </button>
+                </div>
+            </form>
+        </div>
     );
 };
 

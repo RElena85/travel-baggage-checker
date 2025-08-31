@@ -1,42 +1,79 @@
 import { useState, useEffect } from 'react';
 import { Trip, Item } from '../types';
 
+const STORAGE_KEY = 'trippacker_trips';
+
 const useTripData = () => {
     const [trips, setTrips] = useState<Trip[]>([]);
-    const [loading, setLoading] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(true);
 
+    // Load trips from localStorage on component mount
     useEffect(() => {
-        // Load trips from localStorage on component mount
-        const savedTrips = localStorage.getItem('trips');
-        if (savedTrips) {
-            setTrips(JSON.parse(savedTrips));
+        try {
+            const savedTrips = localStorage.getItem(STORAGE_KEY);
+            if (savedTrips) {
+                const parsedTrips = JSON.parse(savedTrips);
+                // Ensure dates are properly converted back to Date objects
+                const tripsWithDates = parsedTrips.map((trip: any) => ({
+                    ...trip,
+                    createdAt: new Date(trip.createdAt),
+                    updatedAt: new Date(trip.updatedAt)
+                }));
+                setTrips(tripsWithDates);
+            }
+        } catch (error) {
+            console.error('Error loading trips from localStorage:', error);
+            // If there's an error, start with empty trips
+            setTrips([]);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     }, []);
 
     // Save trips to localStorage whenever trips change
     useEffect(() => {
-        localStorage.setItem('trips', JSON.stringify(trips));
-    }, [trips]);
+        if (!loading) { // Only save after initial load is complete
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(trips));
+                console.log(`Saved ${trips.length} trips to localStorage`);
+            } catch (error) {
+                console.error('Error saving trips to localStorage:', error);
+            }
+        }
+    }, [trips, loading]);
 
-    const addTrip = (newTrip: Omit<Trip, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const addTrip = (tripName: string, items: { name: string }[]) => {
         const trip: Trip = {
-            ...newTrip,
             id: Date.now().toString(),
+            name: tripName,
+            items: items.map((item, index) => ({
+                id: `${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
+                name: item.name,
+                isIn: false,
+                isBack: false
+            })),
             createdAt: new Date(),
             updatedAt: new Date()
         };
-        setTrips([...trips, trip]);
+        
+        setTrips(prevTrips => {
+            const newTrips = [...prevTrips, trip];
+            console.log(`Added new trip "${tripName}" with ${items.length} items`);
+            return newTrips;
+        });
     };
 
-    const copyTrip = (tripToCopy: Trip) => {
+    const copyTrip = (tripId: string) => {
+        const originalTrip = trips.find(trip => trip.id === tripId);
+        if (!originalTrip) return;
+        
         const copiedTrip: Trip = {
-            ...tripToCopy,
+            ...originalTrip,
             id: Date.now().toString(),
-            name: `${tripToCopy.name} (Copy)`,
+            name: `${originalTrip.name} (Copy)`,
             createdAt: new Date(),
             updatedAt: new Date(),
-            items: tripToCopy.items.map(item => ({
+            items: originalTrip.items.map(item => ({
                 ...item,
                 id: `${Date.now()}-${Math.random()}`,
                 isIn: false,
@@ -89,6 +126,33 @@ const useTripData = () => {
         return trips.find(trip => trip.id === tripId);
     };
 
+    const clearAllTrips = () => {
+        setTrips([]);
+        localStorage.removeItem(STORAGE_KEY);
+        console.log('All trips cleared from localStorage');
+    };
+
+    const exportTrips = () => {
+        return JSON.stringify(trips, null, 2);
+    };
+
+    const importTrips = (tripsJson: string) => {
+        try {
+            const importedTrips = JSON.parse(tripsJson);
+            const tripsWithDates = importedTrips.map((trip: any) => ({
+                ...trip,
+                createdAt: new Date(trip.createdAt),
+                updatedAt: new Date(trip.updatedAt)
+            }));
+            setTrips(tripsWithDates);
+            console.log(`Imported ${tripsWithDates.length} trips`);
+            return true;
+        } catch (error) {
+            console.error('Error importing trips:', error);
+            return false;
+        }
+    };
+
     return {
         trips,
         loading,
@@ -97,7 +161,10 @@ const useTripData = () => {
         updateItemStatus,
         addItemToTrip,
         deleteTrip,
-        getTrip
+        getTrip,
+        clearAllTrips,
+        exportTrips,
+        importTrips
     };
 };
 
