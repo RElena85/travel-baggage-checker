@@ -1,0 +1,77 @@
+body {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #f0f0f0;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+h1, h2, h3 {
+    font-family: 'Lucida Console', Monaco, monospace;
+    color: #2c3e50;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.button:hover {
+    background-color: #2980b9;
+}
+
+.input-field {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.checkbox {
+    margin-right: 10px;
+}
+
+.trip-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.trip-item {
+    background-color: #ecf0f1;
+    margin: 5px 0;
+    padding: 10px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.item-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+.item {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.8em;
+    color: #7f8c8d;
+}
