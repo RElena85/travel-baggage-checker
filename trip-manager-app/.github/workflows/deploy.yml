@@ -9,19 +9,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm install
-        working-directory: ./
+        working-directory: ./trip-manager-app
 
       - name: Build
         run: npm run build
-        working-directory: ./
+        working-directory: ./trip-manager-app
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
-          folder: ./dist
-          token: ${{ secrets.git_pages }}
+          folder: ./trip-manager-app/build
