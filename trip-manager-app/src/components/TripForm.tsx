@@ -1,18 +1,26 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ItemCategory, ITEM_CATEGORIES } from '../types';
 
 interface TripFormProps {
-    onSave: (tripName: string, items: { name: string }[]) => void;
+    onSave: (tripName: string, items: { name: string; category: ItemCategory }[]) => void;
 }
 
 const TripForm: React.FC<TripFormProps> = ({ onSave }) => {
     const [tripName, setTripName] = useState('');
-    const [items, setItems] = useState<{ name: string }[]>([]);
+    const [items, setItems] = useState<{ name: string; category: ItemCategory }[]>([]);
     const [newItemName, setNewItemName] = useState('');
+    const [newItemCategory, setNewItemCategory] = useState<ItemCategory>('otros');
 
     const handleItemNameChange = (index: number, name: string) => {
         const newItems = [...items];
         newItems[index].name = name;
+        setItems(newItems);
+    };
+
+    const handleItemCategoryChange = (index: number, category: ItemCategory) => {
+        const newItems = [...items];
+        newItems[index].category = category;
         setItems(newItems);
     };
 
@@ -26,7 +34,7 @@ const TripForm: React.FC<TripFormProps> = ({ onSave }) => {
 
     const addItem = () => {
         if (newItemName.trim()) {
-            setItems([...items, { name: newItemName.trim() }]);
+            setItems([...items, { name: newItemName.trim(), category: newItemCategory }]);
             setNewItemName('');
         }
     };
@@ -74,6 +82,18 @@ const TripForm: React.FC<TripFormProps> = ({ onSave }) => {
                                 onKeyPress={handleKeyPress}
                                 placeholder="e.g., Passport, Phone charger, Sunscreen..."
                             />
+                            <select
+                                className="form-select"
+                                value={newItemCategory}
+                                onChange={(e) => setNewItemCategory(e.target.value as ItemCategory)}
+                                data-testid="category-select"
+                            >
+                                {Object.entries(ITEM_CATEGORIES).map(([key, category]) => (
+                                    <option key={key} value={key}>
+                                        {category.icon} {category.label}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         <button
                             type="button"
@@ -91,24 +111,55 @@ const TripForm: React.FC<TripFormProps> = ({ onSave }) => {
                             <h4 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--spacing-md)', color: 'var(--gray-700)' }}>
                                 📋 Your Packing List ({items.length} items)
                             </h4>
-                            {items.map((item, index) => (
-                                <div key={index} className="current-item">
-                                    <input
-                                        type="text"
-                                        value={item.name}
-                                        onChange={(e) => handleItemNameChange(index, e.target.value)}
-                                        data-testid={`item-input-${index}`}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => removeItem(index)}
-                                        className="remove-item-btn"
-                                        title="Remove item"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                            ))}
+                            {/* Group items by category */}
+                            {Object.entries(ITEM_CATEGORIES).map(([categoryKey, categoryInfo]) => {
+                                const categoryItems = items.filter(item => item.category === categoryKey);
+                                if (categoryItems.length === 0) return null;
+                                
+                                return (
+                                    <div key={categoryKey} className="category-group">
+                                        <div className="category-header" style={{ backgroundColor: categoryInfo.color }}>
+                                            <span className="category-icon">{categoryInfo.icon}</span>
+                                            <span className="category-label">{categoryInfo.label}</span>
+                                            <span className="category-count">({categoryItems.length})</span>
+                                        </div>
+                                        <div className="category-items">
+                                            {categoryItems.map((item, itemIndex) => {
+                                                const globalIndex = items.findIndex(i => i === item);
+                                                return (
+                                                    <div key={globalIndex} className="current-item">
+                                                        <input
+                                                            type="text"
+                                                            value={item.name}
+                                                            onChange={(e) => handleItemNameChange(globalIndex, e.target.value)}
+                                                            data-testid={`item-input-${globalIndex}`}
+                                                        />
+                                                        <select
+                                                            className="form-select-small"
+                                                            value={item.category}
+                                                            onChange={(e) => handleItemCategoryChange(globalIndex, e.target.value as ItemCategory)}
+                                                        >
+                                                            {Object.entries(ITEM_CATEGORIES).map(([key, cat]) => (
+                                                                <option key={key} value={key}>
+                                                                    {cat.icon} {cat.label}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeItem(globalIndex)}
+                                                            className="remove-item-btn"
+                                                            title="Remove item"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
 

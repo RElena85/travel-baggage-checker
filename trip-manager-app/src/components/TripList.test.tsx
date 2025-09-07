@@ -1,12 +1,18 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { render, screen, fireEvent, act } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import TripList from '../components/TripList';
 import { Trip } from '../types';
 
+// Mock window.confirm
+Object.defineProperty(window, 'confirm', {
+  writable: true,
+  value: jest.fn(() => true), // Default to confirming
+});
+
 // Helper to render component with router
 const renderWithRouter = (component: React.ReactElement) => {
-  return render(<BrowserRouter>{component}</BrowserRouter>);
+  return render(<MemoryRouter>{component}</MemoryRouter>);
 };
 
 describe('TripList Component', () => {
@@ -18,8 +24,8 @@ describe('TripList Component', () => {
       id: '1',
       name: 'Summer Vacation',
       items: [
-        { id: 'item1', name: 'Sunscreen', isIn: true, isBack: false },
-        { id: 'item2', name: 'Swimsuit', isIn: false, isBack: false }
+        { id: 'item1', name: 'Sunscreen', category: 'higiene', isIn: true, isBack: false },
+        { id: 'item2', name: 'Swimsuit', category: 'ropa-exterior', isIn: false, isBack: false }
       ],
       createdAt: new Date('2025-01-01'),
       updatedAt: new Date('2025-01-02')
@@ -28,7 +34,7 @@ describe('TripList Component', () => {
       id: '2',
       name: 'Business Trip',
       items: [
-        { id: 'item3', name: 'Laptop', isIn: true, isBack: true }
+        { id: 'item3', name: 'Laptop', category: 'electronica', isIn: true, isBack: true }
       ],
       createdAt: new Date('2025-01-03'),
       updatedAt: new Date('2025-01-04')
@@ -38,6 +44,7 @@ describe('TripList Component', () => {
   beforeEach(() => {
     mockOnCopyTrip.mockClear();
     mockOnDeleteTrip.mockClear();
+    (window.confirm as jest.Mock).mockClear();
   });
 
   it('should render all trips with their names and item counts', () => {
@@ -70,7 +77,7 @@ describe('TripList Component', () => {
     expect(screen.getByTestId('delete-trip-2')).toBeInTheDocument();
   });
 
-  it('should call onCopyTrip when copy button is clicked', () => {
+  it('should call onCopyTrip when copy button is clicked', async () => {
     renderWithRouter(
       <TripList 
         trips={mockTrips}
@@ -79,12 +86,16 @@ describe('TripList Component', () => {
       />
     );
 
-    fireEvent.click(screen.getByTestId('copy-trip-1'));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('copy-trip-1'));
+    });
 
-    expect(mockOnCopyTrip).toHaveBeenCalledWith(mockTrips[0]);
+    expect(mockOnCopyTrip).toHaveBeenCalledWith('1');
   });
 
-  it('should call onDeleteTrip when delete button is clicked', () => {
+  it('should call onDeleteTrip when delete button is clicked and confirmed', async () => {
+    (window.confirm as jest.Mock).mockReturnValue(true);
+    
     renderWithRouter(
       <TripList 
         trips={mockTrips}
@@ -93,9 +104,31 @@ describe('TripList Component', () => {
       />
     );
 
-    fireEvent.click(screen.getByTestId('delete-trip-1'));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('delete-trip-1'));
+    });
 
+    expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to delete "Summer Vacation"?');
     expect(mockOnDeleteTrip).toHaveBeenCalledWith('1');
+  });
+
+  it('should not call onDeleteTrip when delete is cancelled', async () => {
+    (window.confirm as jest.Mock).mockReturnValue(false);
+    
+    renderWithRouter(
+      <TripList 
+        trips={mockTrips}
+        onCopyTrip={mockOnCopyTrip}
+        onDeleteTrip={mockOnDeleteTrip}
+      />
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('delete-trip-1'));
+    });
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(mockOnDeleteTrip).not.toHaveBeenCalled();
   });
 
   it('should display message when no trips exist', () => {
@@ -110,7 +143,7 @@ describe('TripList Component', () => {
     expect(screen.getByText('No trips yet. Create your first trip!')).toBeInTheDocument();
   });
 
-  it('should render trip names as links', () => {
+  it('should render view links for each trip', () => {
     renderWithRouter(
       <TripList 
         trips={mockTrips}
@@ -119,14 +152,14 @@ describe('TripList Component', () => {
       />
     );
 
-    const tripLink1 = screen.getByRole('link', { name: 'Summer Vacation' });
-    const tripLink2 = screen.getByRole('link', { name: 'Business Trip' });
-
-    expect(tripLink1).toHaveAttribute('href', '/trip/1');
-    expect(tripLink2).toHaveAttribute('href', '/trip/2');
+    const viewLinks = screen.getAllByText('📱 View');
+    expect(viewLinks).toHaveLength(2);
+    
+    expect(viewLinks[0].closest('a')).toHaveAttribute('href', '/trip/1');
+    expect(viewLinks[1].closest('a')).toHaveAttribute('href', '/trip/2');
   });
 
-  it('should display correct item counts', () => {
+  it('should display correct item counts and stats', () => {
     renderWithRouter(
       <TripList 
         trips={mockTrips}
@@ -137,5 +170,8 @@ describe('TripList Component', () => {
 
     expect(screen.getByText('2 items')).toBeInTheDocument();
     expect(screen.getByText('1 items')).toBeInTheDocument();
+    
+    const packedValues = screen.getAllByText('1');
+    expect(packedValues.length).toBeGreaterThan(0);
   });
 });

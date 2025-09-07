@@ -10,18 +10,21 @@ describe('ItemList Component', () => {
     {
       id: '1',
       name: 'Passport',
+      category: 'documentos',
       isIn: false,
       isBack: false
     },
     {
       id: '2',
       name: 'Camera',
+      category: 'electronica',
       isIn: true,
       isBack: false
     },
     {
       id: '3',
       name: 'Charger',
+      category: 'electronica',
       isIn: true,
       isBack: true
     }
@@ -114,7 +117,7 @@ describe('ItemList Component', () => {
       />
     );
 
-    expect(screen.getByText('Items for Your Trip')).toBeInTheDocument();
+    expect(screen.getByText('No items yet')).toBeInTheDocument();
     expect(screen.queryByRole('listitem')).not.toBeInTheDocument();
   });
 
@@ -127,7 +130,7 @@ describe('ItemList Component', () => {
     );
 
     expect(screen.getByText('Item Name')).toBeInTheDocument();
-    expect(screen.getByText('Packed')).toBeInTheDocument();
-    expect(screen.getByText('Returned')).toBeInTheDocument();
+    expect(screen.getByText('Packed ✅')).toBeInTheDocument();
+    expect(screen.getByText('Returned 🎯')).toBeInTheDocument();
   });
 });

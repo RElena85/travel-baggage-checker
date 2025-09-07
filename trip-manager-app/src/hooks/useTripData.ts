@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Trip, Item } from '../types';
+import { Trip, Item, ItemCategory } from '../types';
 
 const STORAGE_KEY = 'trippacker_trips';
+
+// Migration function to ensure all items have categories
+const migrateTripsToCategories = (trips: any[]): Trip[] => {
+    return trips.map(trip => ({
+        ...trip,
+        items: trip.items.map((item: any) => ({
+            ...item,
+            category: item.category || 'otros' as ItemCategory // Default to 'otros' if no category
+        }))
+    }));
+};
 
 const useTripData = () => {
     const [trips, setTrips] = useState<Trip[]>([]);
@@ -19,7 +30,10 @@ const useTripData = () => {
                     createdAt: new Date(trip.createdAt),
                     updatedAt: new Date(trip.updatedAt)
                 }));
-                setTrips(tripsWithDates);
+                
+                // Migrate trips to ensure all items have categories
+                const migratedTrips = migrateTripsToCategories(tripsWithDates);
+                setTrips(migratedTrips);
             }
         } catch (error) {
             console.error('Error loading trips from localStorage:', error);
@@ -42,13 +56,14 @@ const useTripData = () => {
         }
     }, [trips, loading]);
 
-    const addTrip = (tripName: string, items: { name: string }[]) => {
+    const addTrip = (tripName: string, items: { name: string; category: ItemCategory }[]) => {
         const trip: Trip = {
             id: Date.now().toString(),
             name: tripName,
             items: items.map((item, index) => ({
                 id: `${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
                 name: item.name,
+                category: item.category,
                 isIn: false,
                 isBack: false
             })),
@@ -98,10 +113,11 @@ const useTripData = () => {
         }));
     };
 
-    const addItemToTrip = (tripId: string, itemName: string) => {
+    const addItemToTrip = (tripId: string, itemName: string, category: ItemCategory = 'otros') => {
         const newItem: Item = {
             id: `${Date.now()}-${Math.random()}`,
             name: itemName,
+            category: category,
             isIn: false,
             isBack: false
         };
@@ -153,6 +169,77 @@ const useTripData = () => {
         }
     };
 
+    const updateTripName = (tripId: string, newName: string) => {
+        setTrips(trips.map(trip => {
+            if (trip.id === tripId) {
+                return {
+                    ...trip,
+                    name: newName,
+                    updatedAt: new Date()
+                };
+            }
+            return trip;
+        }));
+    };
+
+    const updateItemName = (tripId: string, itemId: string, newName: string) => {
+        setTrips(trips.map(trip => {
+            if (trip.id === tripId) {
+                return {
+                    ...trip,
+                    updatedAt: new Date(),
+                    items: trip.items.map(item => 
+                        item.id === itemId ? { ...item, name: newName } : item
+                    )
+                };
+            }
+            return trip;
+        }));
+    };
+
+    const updateItemTag = (tripId: string, itemId: string, tag: string) => {
+        setTrips(trips.map(trip => {
+            if (trip.id === tripId) {
+                return {
+                    ...trip,
+                    updatedAt: new Date(),
+                    items: trip.items.map(item => 
+                        item.id === itemId ? { ...item, tag: tag || undefined } : item
+                    )
+                };
+            }
+            return trip;
+        }));
+    };
+
+    const updateItemCategory = (tripId: string, itemId: string, category: ItemCategory) => {
+        setTrips(trips.map(trip => {
+            if (trip.id === tripId) {
+                return {
+                    ...trip,
+                    updatedAt: new Date(),
+                    items: trip.items.map(item => 
+                        item.id === itemId ? { ...item, category } : item
+                    )
+                };
+            }
+            return trip;
+        }));
+    };
+
+    const removeItemFromTrip = (tripId: string, itemId: string) => {
+        setTrips(trips.map(trip => {
+            if (trip.id === tripId) {
+                return {
+                    ...trip,
+                    updatedAt: new Date(),
+                    items: trip.items.filter(item => item.id !== itemId)
+                };
+            }
+            return trip;
+        }));
+    };
+
     return {
         trips,
         loading,
@@ -164,7 +251,12 @@ const useTripData = () => {
         getTrip,
         clearAllTrips,
         exportTrips,
-        importTrips
+        importTrips,
+        updateTripName,
+        updateItemName,
+        updateItemTag,
+        updateItemCategory,
+        removeItemFromTrip
     };
 };
 

@@ -51,15 +51,16 @@ describe('useTripData Hook', () => {
     const { result } = renderHook(() => useTripData());
 
     act(() => {
-      result.current.addTrip('New Trip', [{ name: 'Test Item' }]);
+      result.current.addTrip('New Trip', [{ name: 'Test Item', category: 'otros' }]);
     });
 
     expect(result.current.trips).toHaveLength(1);
     expect(result.current.trips[0].name).toBe('New Trip');
     expect(result.current.trips[0].items).toHaveLength(1);
     expect(result.current.trips[0].items[0].name).toBe('Test Item');
+    expect(result.current.trips[0].items[0].category).toBe('otros');
     expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
-      'trips',
+      'trippacker_trips',
       expect.stringContaining('New Trip')
     );
   });
@@ -69,7 +70,7 @@ describe('useTripData Hook', () => {
     
     // First add a trip
     act(() => {
-      result.current.addTrip('Original Trip', [{ name: 'Camera' }]);
+      result.current.addTrip('Original Trip', [{ name: 'Camera', category: 'electronica' }]);
     });
 
     const originalTripId = result.current.trips[0].id;
@@ -89,7 +90,7 @@ describe('useTripData Hook', () => {
     
     // Add a trip with an item
     act(() => {
-      result.current.addTrip('Test Trip', [{ name: 'Camera' }]);
+      result.current.addTrip('Test Trip', [{ name: 'Camera', category: 'electronica' }]);
     });
 
     const tripId = result.current.trips[0].id;
@@ -143,7 +144,7 @@ describe('useTripData Hook', () => {
     });
 
     expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
-      'trips',
+      'trippacker_trips',
       expect.stringContaining('Persistent Trip')
     );
   });

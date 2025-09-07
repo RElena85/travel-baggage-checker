@@ -1,7 +1,18 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import TripForm from '../components/TripForm';
+import { TripProvider } from '../contexts/TripContext';
+
+// Test wrapper that provides router and trip context
+const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <MemoryRouter>
+    <TripProvider>
+      {children}
+    </TripProvider>
+  </MemoryRouter>
+);
 
 describe('TripForm Component', () => {
   const mockOnSave = jest.fn();
@@ -11,7 +22,11 @@ describe('TripForm Component', () => {
   });
 
   it('should render empty form for new trip', () => {
-    render(<TripForm onSave={mockOnSave} />);
+    render(
+      <TestWrapper>
+        <TripForm onSave={mockOnSave} />
+      </TestWrapper>
+    );
 
     expect(screen.getByTestId('trip-name-input')).toHaveValue('');
     expect(screen.getByTestId('save-trip-button')).toBeInTheDocument();
@@ -20,30 +35,49 @@ describe('TripForm Component', () => {
 
   it('should add new item when add button is clicked', async () => {
     const user = userEvent.setup();
-    render(<TripForm onSave={mockOnSave} />);
+    render(
+      <TestWrapper>
+        <TripForm onSave={mockOnSave} />
+      </TestWrapper>
+    );
 
-    // Add item text first
-    await user.type(screen.getByPlaceholderText('e.g., Passport, Phone charger, Sunscreen...'), 'Test Item');
-    await user.click(screen.getByTestId('add-item-button'));
+    await act(async () => {
+      await user.type(screen.getByPlaceholderText('e.g., Passport, Phone charger, Sunscreen...'), 'Test Item');
+      await user.click(screen.getByTestId('add-item-button'));
+    });
 
-    expect(screen.getByTestId('item-input-0')).toHaveValue('Test Item');
+    await waitFor(() => {
+      expect(screen.getByTestId('item-input-0')).toHaveValue('Test Item');
+    });
   });
 
   it('should submit form with valid data', async () => {
     const user = userEvent.setup();
-    render(<TripForm onSave={mockOnSave} />);
+    render(
+      <TestWrapper>
+        <TripForm onSave={mockOnSave} />
+      </TestWrapper>
+    );
 
-    await user.type(screen.getByTestId('trip-name-input'), 'Test Trip');
-    await user.type(screen.getByPlaceholderText('e.g., Passport, Phone charger, Sunscreen...'), 'Test Item');
-    await user.click(screen.getByTestId('add-item-button'));
-    await user.click(screen.getByTestId('save-trip-button'));
+    await act(async () => {
+      await user.type(screen.getByTestId('trip-name-input'), 'Test Trip');
+      await user.type(screen.getByPlaceholderText('e.g., Passport, Phone charger, Sunscreen...'), 'Test Item');
+      await user.click(screen.getByTestId('add-item-button'));
+    });
+
+    await act(async () => {
+      await user.click(screen.getByTestId('save-trip-button'));
+    });
 
     expect(mockOnSave).toHaveBeenCalledWith('Test Trip', [{ name: 'Test Item' }]);
   });
 
   it('should not submit with empty trip name', async () => {
-    const user = userEvent.setup();
-    render(<TripForm onSave={mockOnSave} />);
+    render(
+      <TestWrapper>
+        <TripForm onSave={mockOnSave} />
+      </TestWrapper>
+    );
 
     const saveButton = screen.getByTestId('save-trip-button');
     expect(saveButton).toBeDisabled();
@@ -51,28 +85,38 @@ describe('TripForm Component', () => {
 
   it('should filter out empty items on submit', async () => {
     const user = userEvent.setup();
-    render(<TripForm onSave={mockOnSave} />);
+    render(
+      <TestWrapper>
+        <TripForm onSave={mockOnSave} />
+      </TestWrapper>
+    );
 
-    await user.type(screen.getByTestId('trip-name-input'), 'Test Trip');
-    
-    // Add first item
-    await user.type(screen.getByPlaceholderText('e.g., Passport, Phone charger, Sunscreen...'), 'Valid Item');
-    await user.click(screen.getByTestId('add-item-button'));
-    
-    // Add second empty item
-    await user.click(screen.getByTestId('add-item-button'));
-    
-    await user.click(screen.getByTestId('save-trip-button'));
+    await act(async () => {
+      await user.type(screen.getByTestId('trip-name-input'), 'Test Trip');
+      await user.type(screen.getByPlaceholderText('e.g., Passport, Phone charger, Sunscreen...'), 'Valid Item');
+      await user.click(screen.getByTestId('add-item-button'));
+      await user.click(screen.getByTestId('add-item-button')); // Add empty item
+    });
+
+    await act(async () => {
+      await user.click(screen.getByTestId('save-trip-button'));
+    });
 
     expect(mockOnSave).toHaveBeenCalledWith('Test Trip', [{ name: 'Valid Item' }]);
   });
 
   it('should trim whitespace from trip name', async () => {
     const user = userEvent.setup();
-    render(<TripForm onSave={mockOnSave} />);
+    render(
+      <TestWrapper>
+        <TripForm onSave={mockOnSave} />
+      </TestWrapper>
+    );
 
-    await user.type(screen.getByTestId('trip-name-input'), '  Trimmed Trip  ');
-    await user.click(screen.getByTestId('save-trip-button'));
+    await act(async () => {
+      await user.type(screen.getByTestId('trip-name-input'), '  Trimmed Trip  ');
+      await user.click(screen.getByTestId('save-trip-button'));
+    });
 
     expect(mockOnSave).toHaveBeenCalledWith('Trimmed Trip', []);
   });
