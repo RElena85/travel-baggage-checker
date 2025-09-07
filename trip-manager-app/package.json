@@ -2,7 +2,7 @@
   "name": "trip-manager-app",
   "version": "1.0.0",
   "description": "A web application to manage trips and their associated items with a retro design and modern UI/UX.",
-  "homepage": "https://tu-usuario.github.io/travel-baggage-checker",
+  "homepage": "https://relena85.github.io/travel-baggage-checker",
   "main": "src/App.tsx",
   "scripts": {
     "start": "react-scripts start",

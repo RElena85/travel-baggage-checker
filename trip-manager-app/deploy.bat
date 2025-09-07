@@ -39,6 +39,6 @@ if %ERRORLEVEL% neq 0 (
 
 echo.
 echo ✅ Successfully deployed to GitHub Pages!
-echo 🌐 Your app will be available at: https://tu-usuario.github.io/travel-baggage-checker
+echo 🌐 Your app will be available at: https://relena85.github.io/travel-baggage-checker
 echo.
 pause
