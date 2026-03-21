@@ -69,7 +69,7 @@ describe('TripForm Component', () => {
       await user.click(screen.getByTestId('save-trip-button'));
     });
 
-    expect(mockOnSave).toHaveBeenCalledWith('Test Trip', [{ name: 'Test Item' }]);
+    expect(mockOnSave).toHaveBeenCalledWith('Test Trip', [{ name: 'Test Item', category: 'otros' }], undefined, undefined);
   });
 
   it('should not submit with empty trip name', async () => {
@@ -102,7 +102,7 @@ describe('TripForm Component', () => {
       await user.click(screen.getByTestId('save-trip-button'));
     });
 
-    expect(mockOnSave).toHaveBeenCalledWith('Test Trip', [{ name: 'Valid Item' }]);
+    expect(mockOnSave).toHaveBeenCalledWith('Test Trip', [{ name: 'Valid Item', category: 'otros' }], undefined, undefined);
   });
 
   it('should trim whitespace from trip name', async () => {
@@ -118,6 +118,6 @@ describe('TripForm Component', () => {
       await user.click(screen.getByTestId('save-trip-button'));
     });
 
-    expect(mockOnSave).toHaveBeenCalledWith('Trimmed Trip', []);
+    expect(mockOnSave).toHaveBeenCalledWith('Trimmed Trip', [], undefined, undefined);
   });
 });

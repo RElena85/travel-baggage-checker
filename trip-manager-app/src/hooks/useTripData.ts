@@ -49,17 +49,18 @@ const useTripData = () => {
         if (!loading) { // Only save after initial load is complete
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(trips));
-                console.log(`Saved ${trips.length} trips to localStorage`);
             } catch (error) {
                 console.error('Error saving trips to localStorage:', error);
             }
         }
     }, [trips, loading]);
 
-    const addTrip = (tripName: string, items: { name: string; category: ItemCategory }[]) => {
+    const addTrip = (tripName: string, items: { name: string; category: ItemCategory }[], destination?: string, departureDate?: string) => {
         const trip: Trip = {
             id: Date.now().toString(),
             name: tripName,
+            destination: destination || undefined,
+            departureDate: departureDate || undefined,
             items: items.map((item, index) => ({
                 id: `${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
                 name: item.name,
@@ -71,11 +72,7 @@ const useTripData = () => {
             updatedAt: new Date()
         };
         
-        setTrips(prevTrips => {
-            const newTrips = [...prevTrips, trip];
-            console.log(`Added new trip "${tripName}" with ${items.length} items`);
-            return newTrips;
-        });
+        setTrips(prevTrips => [...prevTrips, trip]);
     };
 
     const copyTrip = (tripId: string) => {
@@ -145,7 +142,32 @@ const useTripData = () => {
     const clearAllTrips = () => {
         setTrips([]);
         localStorage.removeItem(STORAGE_KEY);
-        console.log('All trips cleared from localStorage');
+    };
+
+    const markAllPacked = (tripId: string) => {
+        setTrips(trips.map(trip => {
+            if (trip.id === tripId) {
+                return {
+                    ...trip,
+                    updatedAt: new Date(),
+                    items: trip.items.map(item => ({ ...item, isIn: true }))
+                };
+            }
+            return trip;
+        }));
+    };
+
+    const unpackAll = (tripId: string) => {
+        setTrips(trips.map(trip => {
+            if (trip.id === tripId) {
+                return {
+                    ...trip,
+                    updatedAt: new Date(),
+                    items: trip.items.map(item => ({ ...item, isIn: false, isBack: false }))
+                };
+            }
+            return trip;
+        }));
     };
 
     const exportTrips = () => {
@@ -161,7 +183,6 @@ const useTripData = () => {
                 updatedAt: new Date(trip.updatedAt)
             }));
             setTrips(tripsWithDates);
-            console.log(`Imported ${tripsWithDates.length} trips`);
             return true;
         } catch (error) {
             console.error('Error importing trips:', error);
@@ -256,7 +277,9 @@ const useTripData = () => {
         updateItemName,
         updateItemTag,
         updateItemCategory,
-        removeItemFromTrip
+        removeItemFromTrip,
+        markAllPacked,
+        unpackAll
     };
 };
 

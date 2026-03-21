@@ -14,7 +14,9 @@ const TripDetails: React.FC = () => {
         updateItemTag, 
         updateItemCategory,
         removeItemFromTrip, 
-        addItemToTrip 
+        addItemToTrip,
+        markAllPacked,
+        unpackAll
     } = useTripContext();
     const trip = trips.find(t => t.id === id);
     
@@ -115,8 +117,23 @@ const TripDetails: React.FC = () => {
                                     </button>
                                 </div>
                             )}
+                            {trip.destination && (
+                                <div className="trip-details-destination">
+                                    📍 {trip.destination}
+                                    {trip.departureDate && (
+                                        <span className="trip-details-date">
+                                            &nbsp;•&nbsp;✈️ {new Date(trip.departureDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                            {!trip.destination && trip.departureDate && (
+                                <div className="trip-details-destination">
+                                    ✈️ {new Date(trip.departureDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </div>
+                            )}
                         </div>
-                        <Link to="/" className="back-button">
+                        <Link to="/trips" className="back-button">
                             ← Back to Trips
                         </Link>
                     </div>
@@ -137,6 +154,26 @@ const TripDetails: React.FC = () => {
                     </div>
 
                     <div className="page-content">
+                        {totalItems > 0 && (
+                            <div className="quick-actions-bar">
+                                <button
+                                    onClick={() => markAllPacked(trip.id)}
+                                    className="btn btn-success btn-sm"
+                                    data-testid="mark-all-packed"
+                                    disabled={packedItems === totalItems}
+                                >
+                                    ✅ Mark All Packed
+                                </button>
+                                <button
+                                    onClick={() => unpackAll(trip.id)}
+                                    className="btn btn-secondary btn-sm"
+                                    data-testid="unpack-all"
+                                    disabled={packedItems === 0 && returnedItems === 0}
+                                >
+                                    📦 Reset All
+                                </button>
+                            </div>
+                        )}
                         <EditableItemList
                             items={trip.items}
                             tripId={trip.id}

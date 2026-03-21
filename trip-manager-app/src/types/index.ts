@@ -36,6 +36,8 @@ export interface Item {
 export interface Trip {
     id: string;
     name: string;
+    destination?: string;
+    departureDate?: string; // ISO date string YYYY-MM-DD
     items: Item[];
     createdAt: Date;
     updatedAt: Date;

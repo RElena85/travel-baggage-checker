@@ -5,7 +5,7 @@ import useTripData from '../hooks/useTripData';
 interface TripContextType {
   trips: Trip[];
   loading: boolean;
-  addTrip: (tripName: string, items: { name: string; category: ItemCategory }[]) => void;
+  addTrip: (tripName: string, items: { name: string; category: ItemCategory }[], destination?: string, departureDate?: string) => void;
   copyTrip: (tripId: string) => void;
   updateItemStatus: (tripId: string, itemId: string, field: 'isIn' | 'isBack') => void;
   addItemToTrip: (tripId: string, itemName: string, category?: ItemCategory) => void;
@@ -19,6 +19,8 @@ interface TripContextType {
   updateItemTag: (tripId: string, itemId: string, tag: string) => void;
   updateItemCategory: (tripId: string, itemId: string, category: ItemCategory) => void;
   removeItemFromTrip: (tripId: string, itemId: string) => void;
+  markAllPacked: (tripId: string) => void;
+  unpackAll: (tripId: string) => void;
 }
 
 const TripContext = createContext<TripContextType | undefined>(undefined);

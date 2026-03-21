@@ -8,9 +8,9 @@ const CreateTrip: React.FC = () => {
     const navigate = useNavigate();
     const { addTrip } = useTripContext();
 
-    const handleSaveTrip = (tripName: string, items: { name: string; category: ItemCategory }[]) => {
-        addTrip(tripName, items);
-        navigate('/trips'); // Navegar a la lista de trips después de crear
+    const handleSaveTrip = (tripName: string, items: { name: string; category: ItemCategory }[], destination?: string, departureDate?: string) => {
+        addTrip(tripName, items, destination, departureDate);
+        navigate('/trips');
     };
 
     return (

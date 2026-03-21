@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import { ItemCategory, ITEM_CATEGORIES } from '../types';
 
 interface TripFormProps {
-    onSave: (tripName: string, items: { name: string; category: ItemCategory }[]) => void;
+    onSave: (tripName: string, items: { name: string; category: ItemCategory }[], destination?: string, departureDate?: string) => void;
 }
 
 const TripForm: React.FC<TripFormProps> = ({ onSave }) => {
     const [tripName, setTripName] = useState('');
+    const [destination, setDestination] = useState('');
+    const [departureDate, setDepartureDate] = useState('');
     const [items, setItems] = useState<{ name: string; category: ItemCategory }[]>([]);
     const [newItemName, setNewItemName] = useState('');
     const [newItemCategory, setNewItemCategory] = useState<ItemCategory>('otros');
@@ -28,7 +30,7 @@ const TripForm: React.FC<TripFormProps> = ({ onSave }) => {
         e.preventDefault();
         if (tripName.trim()) {
             const validItems = items.filter(item => item.name.trim() !== '');
-            onSave(tripName.trim(), validItems);
+            onSave(tripName.trim(), validItems, destination.trim() || undefined, departureDate || undefined);
         }
     };
 
@@ -67,6 +69,36 @@ const TripForm: React.FC<TripFormProps> = ({ onSave }) => {
                         placeholder="e.g., Weekend in Paris, Business Trip to Tokyo..."
                         data-testid="trip-name-input"
                     />
+                </div>
+
+                <div className="form-row">
+                    <div className="form-group">
+                        <label className="form-label" htmlFor="trip-destination">
+                            📍 Destination
+                        </label>
+                        <input
+                            id="trip-destination"
+                            type="text"
+                            className="form-input"
+                            value={destination}
+                            onChange={(e) => setDestination(e.target.value)}
+                            placeholder="e.g., Paris, France"
+                            data-testid="trip-destination-input"
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label" htmlFor="trip-departure">
+                            📅 Departure Date
+                        </label>
+                        <input
+                            id="trip-departure"
+                            type="date"
+                            className="form-input"
+                            value={departureDate}
+                            onChange={(e) => setDepartureDate(e.target.value)}
+                            data-testid="trip-departure-input"
+                        />
+                    </div>
                 </div>
 
                 <div className="items-section">
