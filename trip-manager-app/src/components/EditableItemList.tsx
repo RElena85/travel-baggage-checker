@@ -186,17 +186,9 @@ const EditableItemList: React.FC<EditableItemListProps> = ({
                 const categoryInfo = ITEM_CATEGORIES[groupName as ItemCategory];
                 
                 return (
-                    <div key={groupName} className="item-group mb-6">
+                    <div key={groupName} className="item-category-group">
                         {groupBy !== 'none' && (
-                            <div 
-                                className="category-header mb-3"
-                                style={{ 
-                                    backgroundColor: categoryInfo?.color || '#f5f5f5',
-                                    padding: 'var(--spacing-sm) var(--spacing-md)',
-                                    borderRadius: 'var(--border-radius)',
-                                    border: '1px solid var(--gray-200)'
-                                }}
-                            >
+                            <div className="item-category-header">
                                 <h3 className="group-title">
                                     {categoryInfo ? (
                                         <>
@@ -213,7 +205,7 @@ const EditableItemList: React.FC<EditableItemListProps> = ({
                             </div>
                         )}
 
-                        <div className="items-grid">
+                        <div className="item-rows">
                             {groupItems.map((item) => (
                                 <div key={item.id} className="item-card">
                                     <div className="item-checkboxes">

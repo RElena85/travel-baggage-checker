@@ -140,7 +140,7 @@ const TripForm: React.FC<TripFormProps> = ({ onSave }) => {
 
                     {items.length > 0 && (
                         <div className="current-items">
-                            <h4 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600, marginBottom: 'var(--spacing-md)', color: 'var(--gray-700)' }}>
+                            <h4 className="packing-list-title">
                                 📋 Your Packing List ({items.length} items)
                             </h4>
                             {/* Group items by category */}
@@ -150,7 +150,7 @@ const TripForm: React.FC<TripFormProps> = ({ onSave }) => {
                                 
                                 return (
                                     <div key={categoryKey} className="category-group">
-                                        <div className="category-header" style={{ backgroundColor: categoryInfo.color }}>
+                                        <div className="category-header">
                                             <span className="category-icon">{categoryInfo.icon}</span>
                                             <span className="category-label">{categoryInfo.label}</span>
                                             <span className="category-count">({categoryItems.length})</span>
@@ -199,7 +199,7 @@ const TripForm: React.FC<TripFormProps> = ({ onSave }) => {
                         <div className="empty-items">
                             <div className="empty-items-icon">📝</div>
                             <p>Start adding items to your packing list!</p>
-                            <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--gray-500)', marginTop: 'var(--spacing-sm)' }}>
+                            <p className="packing-list-tip">
                                 Tip: Press Enter after typing an item name to quickly add it
                             </p>
                         </div>

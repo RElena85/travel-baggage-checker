@@ -123,8 +123,7 @@ const TripList: React.FC<TripListProps> = ({ trips, onCopyTrip, onDeleteTrip }) 
                                             </button>
                                             <button
                                                 onClick={handleCancelDelete}
-                                                className="trip-action-btn"
-                                                style={{ background: 'var(--gray-400)', color: 'white' }}
+                                                className="trip-action-btn trip-action-btn--cancel"
                                                 data-testid={`cancel-delete-${trip.id}`}
                                             >
                                                 ✕ No

@@ -1,0 +1,12 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "windows": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path $PWD '.github\\hooks\\rtk-rewrite.ps1')\"",
+        "command": "bash .github/hooks/rtk-rewrite.sh",
+        "timeout": 10
+      }
+    ]
+  }
+}
