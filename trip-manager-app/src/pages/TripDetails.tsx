@@ -197,8 +197,8 @@ const TripDetails: React.FC = () => {
                                                 <div className="text-sm text-gray-600 mb-2">Packing Progress</div>
                                                 <div className="progress-bar">
                                                     <div 
-                                                        className="progress-fill" 
-                                                        style={{ width: `${packedPercentage}%` }}
+                                                        className="progress-fill"
+                                                        style={{ '--bar-fill': `${packedPercentage}%` } as React.CSSProperties}
                                                     ></div>
                                                 </div>
                                                 <div className="text-sm text-gray-500 mt-1">
@@ -209,11 +209,8 @@ const TripDetails: React.FC = () => {
                                                 <div className="text-sm text-gray-600 mb-2">Return Progress</div>
                                                 <div className="progress-bar">
                                                     <div 
-                                                        className="progress-fill" 
-                                                        style={{ 
-                                                            width: `${returnedPercentage}%`,
-                                                            background: 'var(--accent-color)'
-                                                        }}
+                                                        className="progress-fill trip-progress-bar-fill--returned"
+                                                        style={{ '--bar-fill': `${returnedPercentage}%` } as React.CSSProperties}
                                                     ></div>
                                                 </div>
                                                 <div className="text-sm text-gray-500 mt-1">

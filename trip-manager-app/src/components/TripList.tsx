@@ -102,7 +102,7 @@ const TripList: React.FC<TripListProps> = ({ trips, onCopyTrip, onDeleteTrip }) 
                                     <div className="progress-bar">
                                         <div 
                                             className="progress-fill" 
-                                            style={{ width: `${stats.packedPercentage}%` }}
+                                            style={{ '--bar-fill': `${stats.packedPercentage}%` } as React.CSSProperties}
                                         ></div>
                                     </div>
                                     <div className="progress-text">

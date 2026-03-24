@@ -8,6 +8,8 @@ import TripDetails from './pages/TripDetails';
 import TripsPage from './pages/TripsPage';
 import './styles/globals.css';
 
+const basename = process.env.PUBLIC_URL || '';
+
 // Component without router for testing
 export const AppRoutes: React.FC = () => {
   return (
@@ -26,7 +28,7 @@ export const AppRoutes: React.FC = () => {
 const App: React.FC = () => {
   return (
     <TripProvider>
-      <Router>
+      <Router basename={basename}>
         <AppRoutes />
       </Router>
     </TripProvider>
