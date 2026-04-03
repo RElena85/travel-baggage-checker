@@ -1,0 +1,5 @@
+sys.executable: C:\Users\rafae\AppData\Local\Programs\Python\Python312\python.exe
+node.exe exists: True
+npm-cli.js exists: True
+Python subprocess: rc=0 out='python works' err=''
+Node version: rc=0 out='v22.14.0' err=''

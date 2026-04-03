@@ -1,286 +1,256 @@
 import { useState, useEffect } from 'react';
 import { Trip, Item, ItemCategory } from '../types';
+import { migrateTripsToCategories } from '../utils/helpers';
 
 const STORAGE_KEY = 'trippacker_trips';
 
-// Migration function to ensure all items have categories
-const migrateTripsToCategories = (trips: any[]): Trip[] => {
-    return trips.map(trip => ({
+export function useTripData() {
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setTrips(migrateTripsToCategories(parsed));
+      }
+    } catch {
+      setTrips([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(trips));
+    }
+  }, [trips, loading]);
+
+  function addTrip(
+    name: string,
+    items: Array<{ name: string; category?: ItemCategory }>,
+    destination?: string,
+    departureDate?: string
+  ) {
+    const now = new Date();
+    const id = Date.now().toString();
+    const newTrip: Trip = {
+      id,
+      name: name.trim(),
+      destination,
+      departureDate,
+      items: items
+        .filter(item => item.name.trim())
+        .map((item, index) => ({
+          id: `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 7)}`,
+          name: item.name.trim(),
+          isIn: false,
+          isBack: false,
+          category: item.category || 'otros',
+        })),
+      createdAt: now,
+      updatedAt: now,
+    };
+    setTrips(prev => [...prev, newTrip]);
+  }
+
+  function copyTrip(tripId: string) {
+    setTrips(prev => {
+      const trip = prev.find(t => t.id === tripId);
+      if (!trip) return prev;
+      const now = new Date();
+      const copied: Trip = {
         ...trip,
-        items: trip.items.map((item: any) => ({
-            ...item,
-            category: item.category || 'otros' as ItemCategory // Default to 'otros' if no category
-        }))
-    }));
-};
+        id: Date.now().toString(),
+        name: `${trip.name} (Copy)`,
+        items: trip.items.map(item => ({
+          ...item,
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          isIn: false,
+          isBack: false,
+        })),
+        createdAt: now,
+        updatedAt: now,
+      };
+      return [...prev, copied];
+    });
+  }
 
-const useTripData = () => {
-    const [trips, setTrips] = useState<Trip[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
+  function deleteTrip(tripId: string) {
+    setTrips(prev => prev.filter(t => t.id !== tripId));
+  }
 
-    // Load trips from localStorage on component mount
-    useEffect(() => {
-        try {
-            const savedTrips = localStorage.getItem(STORAGE_KEY);
-            if (savedTrips) {
-                const parsedTrips = JSON.parse(savedTrips);
-                // Ensure dates are properly converted back to Date objects
-                const tripsWithDates = parsedTrips.map((trip: any) => ({
-                    ...trip,
-                    createdAt: new Date(trip.createdAt),
-                    updatedAt: new Date(trip.updatedAt)
-                }));
-                
-                // Migrate trips to ensure all items have categories
-                const migratedTrips = migrateTripsToCategories(tripsWithDates);
-                setTrips(migratedTrips);
+  function updateItemStatus(tripId: string, itemId: string, field: 'isIn' | 'isBack') {
+    setTrips(prev =>
+      prev.map(trip =>
+        trip.id === tripId
+          ? {
+              ...trip,
+              updatedAt: new Date(),
+              items: trip.items.map(item =>
+                item.id === itemId ? { ...item, [field]: !item[field] } : item
+              ),
             }
-        } catch (error) {
-            console.error('Error loading trips from localStorage:', error);
-            // If there's an error, start with empty trips
-            setTrips([]);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+          : trip
+      )
+    );
+  }
 
-    // Save trips to localStorage whenever trips change
-    useEffect(() => {
-        if (!loading) { // Only save after initial load is complete
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(trips));
-            } catch (error) {
-                console.error('Error saving trips to localStorage:', error);
-            }
-        }
-    }, [trips, loading]);
-
-    const addTrip = (tripName: string, items: { name: string; category: ItemCategory }[], destination?: string, departureDate?: string) => {
-        const trip: Trip = {
-            id: Date.now().toString(),
-            name: tripName,
-            destination: destination || undefined,
-            departureDate: departureDate || undefined,
-            items: items.map((item, index) => ({
-                id: `${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
-                name: item.name,
-                category: item.category,
-                isIn: false,
-                isBack: false
-            })),
-            createdAt: new Date(),
-            updatedAt: new Date()
-        };
-        
-        setTrips(prevTrips => [...prevTrips, trip]);
-    };
-
-    const copyTrip = (tripId: string) => {
-        const originalTrip = trips.find(trip => trip.id === tripId);
-        if (!originalTrip) return;
-        
-        const copiedTrip: Trip = {
-            ...originalTrip,
-            id: Date.now().toString(),
-            name: `${originalTrip.name} (Copy)`,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            items: originalTrip.items.map(item => ({
-                ...item,
-                id: `${Date.now()}-${Math.random()}`,
-                isIn: false,
-                isBack: false
-            }))
-        };
-        setTrips([...trips, copiedTrip]);
-    };
-
-    const updateItemStatus = (tripId: string, itemId: string, field: 'isIn' | 'isBack') => {
-        setTrips(trips.map(trip => {
-            if (trip.id === tripId) {
-                return {
-                    ...trip,
-                    updatedAt: new Date(),
-                    items: trip.items.map(item => 
-                        item.id === itemId ? { ...item, [field]: !item[field] } : item
-                    )
-                };
-            }
-            return trip;
-        }));
-    };
-
-    const addItemToTrip = (tripId: string, itemName: string, category: ItemCategory = 'otros') => {
+  function addItemToTrip(tripId: string, itemName: string, category?: ItemCategory) {
+    setTrips(prev =>
+      prev.map(trip => {
+        if (trip.id !== tripId) return trip;
         const newItem: Item = {
-            id: `${Date.now()}-${Math.random()}`,
-            name: itemName,
-            category: category,
-            isIn: false,
-            isBack: false
+          id: `${Date.now()}-0-${Math.random().toString(36).slice(2, 7)}`,
+          name: itemName.trim(),
+          isIn: false,
+          isBack: false,
+          category: category || 'otros',
         };
+        return { ...trip, updatedAt: new Date(), items: [...trip.items, newItem] };
+      })
+    );
+  }
 
-        setTrips(trips.map(trip => {
-            if (trip.id === tripId) {
-                return {
-                    ...trip,
-                    updatedAt: new Date(),
-                    items: [...trip.items, newItem]
-                };
+  function removeItemFromTrip(tripId: string, itemId: string) {
+    setTrips(prev =>
+      prev.map(trip =>
+        trip.id === tripId
+          ? { ...trip, updatedAt: new Date(), items: trip.items.filter(i => i.id !== itemId) }
+          : trip
+      )
+    );
+  }
+
+  function updateTripName(tripId: string, newName: string) {
+    setTrips(prev =>
+      prev.map(trip =>
+        trip.id === tripId ? { ...trip, name: newName.trim(), updatedAt: new Date() } : trip
+      )
+    );
+  }
+
+  function updateItemName(tripId: string, itemId: string, newName: string) {
+    setTrips(prev =>
+      prev.map(trip =>
+        trip.id === tripId
+          ? {
+              ...trip,
+              updatedAt: new Date(),
+              items: trip.items.map(item =>
+                item.id === itemId ? { ...item, name: newName.trim() } : item
+              ),
             }
-            return trip;
-        }));
-    };
+          : trip
+      )
+    );
+  }
 
-    const deleteTrip = (tripId: string) => {
-        setTrips(trips.filter(trip => trip.id !== tripId));
-    };
-
-    const getTrip = (tripId: string) => {
-        return trips.find(trip => trip.id === tripId);
-    };
-
-    const clearAllTrips = () => {
-        setTrips([]);
-        localStorage.removeItem(STORAGE_KEY);
-    };
-
-    const markAllPacked = (tripId: string) => {
-        setTrips(trips.map(trip => {
-            if (trip.id === tripId) {
-                return {
-                    ...trip,
-                    updatedAt: new Date(),
-                    items: trip.items.map(item => ({ ...item, isIn: true }))
-                };
+  function updateItemTag(tripId: string, itemId: string, tag: string) {
+    setTrips(prev =>
+      prev.map(trip =>
+        trip.id === tripId
+          ? {
+              ...trip,
+              updatedAt: new Date(),
+              items: trip.items.map(item =>
+                item.id === itemId ? { ...item, tag } : item
+              ),
             }
-            return trip;
-        }));
-    };
+          : trip
+      )
+    );
+  }
 
-    const unpackAll = (tripId: string) => {
-        setTrips(trips.map(trip => {
-            if (trip.id === tripId) {
-                return {
-                    ...trip,
-                    updatedAt: new Date(),
-                    items: trip.items.map(item => ({ ...item, isIn: false, isBack: false }))
-                };
+  function updateItemCategory(tripId: string, itemId: string, category: ItemCategory) {
+    setTrips(prev =>
+      prev.map(trip =>
+        trip.id === tripId
+          ? {
+              ...trip,
+              updatedAt: new Date(),
+              items: trip.items.map(item =>
+                item.id === itemId ? { ...item, category } : item
+              ),
             }
-            return trip;
-        }));
-    };
+          : trip
+      )
+    );
+  }
 
-    const exportTrips = () => {
-        return JSON.stringify(trips, null, 2);
-    };
-
-    const importTrips = (tripsJson: string) => {
-        try {
-            const importedTrips = JSON.parse(tripsJson);
-            const tripsWithDates = importedTrips.map((trip: any) => ({
-                ...trip,
-                createdAt: new Date(trip.createdAt),
-                updatedAt: new Date(trip.updatedAt)
-            }));
-            setTrips(tripsWithDates);
-            return true;
-        } catch (error) {
-            console.error('Error importing trips:', error);
-            return false;
-        }
-    };
-
-    const updateTripName = (tripId: string, newName: string) => {
-        setTrips(trips.map(trip => {
-            if (trip.id === tripId) {
-                return {
-                    ...trip,
-                    name: newName,
-                    updatedAt: new Date()
-                };
+  function markAllPacked(tripId: string) {
+    setTrips(prev =>
+      prev.map(trip =>
+        trip.id === tripId
+          ? {
+              ...trip,
+              updatedAt: new Date(),
+              items: trip.items.map(item => ({ ...item, isIn: true })),
             }
-            return trip;
-        }));
-    };
+          : trip
+      )
+    );
+  }
 
-    const updateItemName = (tripId: string, itemId: string, newName: string) => {
-        setTrips(trips.map(trip => {
-            if (trip.id === tripId) {
-                return {
-                    ...trip,
-                    updatedAt: new Date(),
-                    items: trip.items.map(item => 
-                        item.id === itemId ? { ...item, name: newName } : item
-                    )
-                };
+  function unpackAll(tripId: string) {
+    setTrips(prev =>
+      prev.map(trip =>
+        trip.id === tripId
+          ? {
+              ...trip,
+              updatedAt: new Date(),
+              items: trip.items.map(item => ({ ...item, isIn: false, isBack: false })),
             }
-            return trip;
-        }));
-    };
+          : trip
+      )
+    );
+  }
 
-    const updateItemTag = (tripId: string, itemId: string, tag: string) => {
-        setTrips(trips.map(trip => {
-            if (trip.id === tripId) {
-                return {
-                    ...trip,
-                    updatedAt: new Date(),
-                    items: trip.items.map(item => 
-                        item.id === itemId ? { ...item, tag: tag || undefined } : item
-                    )
-                };
-            }
-            return trip;
-        }));
-    };
+  function clearAllTrips() {
+    setTrips([]);
+    localStorage.removeItem(STORAGE_KEY);
+  }
 
-    const updateItemCategory = (tripId: string, itemId: string, category: ItemCategory) => {
-        setTrips(trips.map(trip => {
-            if (trip.id === tripId) {
-                return {
-                    ...trip,
-                    updatedAt: new Date(),
-                    items: trip.items.map(item => 
-                        item.id === itemId ? { ...item, category } : item
-                    )
-                };
-            }
-            return trip;
-        }));
-    };
+  function getTrip(tripId: string): Trip | undefined {
+    return trips.find(t => t.id === tripId);
+  }
 
-    const removeItemFromTrip = (tripId: string, itemId: string) => {
-        setTrips(trips.map(trip => {
-            if (trip.id === tripId) {
-                return {
-                    ...trip,
-                    updatedAt: new Date(),
-                    items: trip.items.filter(item => item.id !== itemId)
-                };
-            }
-            return trip;
-        }));
-    };
+  function exportTrips(): string {
+    return JSON.stringify(trips, null, 2);
+  }
 
-    return {
-        trips,
-        loading,
-        addTrip,
-        copyTrip,
-        updateItemStatus,
-        addItemToTrip,
-        deleteTrip,
-        getTrip,
-        clearAllTrips,
-        exportTrips,
-        importTrips,
-        updateTripName,
-        updateItemName,
-        updateItemTag,
-        updateItemCategory,
-        removeItemFromTrip,
-        markAllPacked,
-        unpackAll
-    };
-};
+  function importTrips(json: string): boolean {
+    try {
+      const parsed = JSON.parse(json);
+      if (!Array.isArray(parsed)) return false;
+      const migrated = migrateTripsToCategories(parsed);
+      setTrips(migrated);
+      return true;
+    } catch {
+      return false;
+    }
+  }
 
-export default useTripData;
+  return {
+    trips,
+    loading,
+    addTrip,
+    copyTrip,
+    deleteTrip,
+    updateItemStatus,
+    addItemToTrip,
+    removeItemFromTrip,
+    updateTripName,
+    updateItemName,
+    updateItemTag,
+    updateItemCategory,
+    markAllPacked,
+    unpackAll,
+    clearAllTrips,
+    getTrip,
+    exportTrips,
+    importTrips,
+  };
+}

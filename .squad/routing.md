@@ -1,70 +1,47 @@
-# Routing Rules — TripPacker
+# Work Routing
 
-## Quick Reference
+How to decide who handles what.
 
-| Task Type | Route To |
-|-----------|----------|
-| React components, hooks, pages, routing, TypeScript types, tests | `frontend-engineer` |
-| `package.json`, `tsconfig.json`, CI/CD workflows, GitHub Actions, deploy scripts | `platform-engineer` |
-| Cross-cutting decisions, scope prioritisation, breaking design changes | `lead` |
-| Data model changes (`Item`, `Trip`, `ItemCategory`) | `lead` logs decision FIRST → `frontend-engineer` implements (code + tests) |
-| Dead-code files (`ItemForm.tsx`, `ItemList.tsx`) | `lead` decides remove or rehabilitate → `frontend-engineer` executes |
-| Task crossing application code AND tooling | `lead` broadcasts to `frontend-engineer` AND `platform-engineer`; synthesises result |
+## Routing Table
 
----
+## Routing Table
 
-## Rules (Detailed)
+| Work Type | Route To | Examples |
+|-----------|----------|---------|
+| React components, hooks, pages, routing | Kaylee | EditableItemList, TripForm, Home, TripDetails, useTripData, App.tsx |
+| TypeScript types (`Item`, `Trip`, `ItemCategory`) | Mal logs decision FIRST → Kaylee implements | Adding fields to Item, changing Trip shape |
+| Test files (all `.test.tsx`, `.test.ts`) | Zoe | New tests, fixing failing tests, coverage review |
+| Test quality review / PR approval | Zoe | Reviewer for all Kaylee PRs before merge |
+| Design system / CSS (`globals.css`, `components.css`) | Kaylee | Token application, Stitch workflow, class alignment |
+| Dead-code removal (ItemForm.tsx, ItemList.tsx) | Mal decides → Kaylee executes | Removal, replacement, or rehabilitation |
+| `package.json`, `tsconfig.json`, path aliases | Wash | Adding dependencies, baseUrl config, alias setup |
+| GitHub Actions, CI/CD, deploy workflows | Wash | `deploy.yml`, `deploy.bat`, `deploy.sh`, gh-pages |
+| CRA toolchain questions, bundler migration | Wash | Vite migration analysis, react-scripts deprecation |
+| Cross-cutting decisions, architectural scope | Mal | What to build next, trade-offs, breaking changes |
+| `decisions.md` entries | Mal | Always — no agent writes to decisions.md except Mal |
+| Scope/priority questions | Mal | Which features, what order, what's out of scope |
+| Session logging | Scribe | Automatic — never needs routing |
 
-### → `frontend-engineer`
+## Issue Routing
 
-Assign when the work involves any of:
-- React 18 functional components (any `.tsx` file under `src/`)
-- Custom hooks (`useTripData.ts` or new hooks)
-- Pages, layouts, routing configuration (React Router v6)
-- TypeScript types, interfaces, or type guards
-- Test files — `*.test.tsx` / `*.test.ts` (Jest + @testing-library/react)
-- `data-testid` attribute additions or changes
-- State management via React Context
-- Grouping/filtering logic in `EditableItemList.tsx`
+| Label | Action | Who |
+|-------|--------|-----|
+| `squad` | Triage: analyze issue, assign `squad:{member}` label | Lead |
+| `squad:{name}` | Pick up issue and complete the work | Named member |
 
-**Constraint:** Tests ship in the same PR as the feature. A task is not done until both code and tests are delivered.
+### How Issue Assignment Works
 
----
+1. When a GitHub issue gets the `squad` label, the **Lead** triages it — analyzing content, assigning the right `squad:{member}` label, and commenting with triage notes.
+2. When a `squad:{member}` label is applied, that member picks up the issue in their next session.
+3. Members can reassign by removing their label and adding another member's label.
+4. The `squad` label is the "inbox" — untriaged issues waiting for Lead review.
 
-### → `platform-engineer`
+## Rules
 
-Assign when the work involves any of:
-- `package.json` (dependencies, scripts, versioning)
-- `tsconfig.json` (compiler options, path aliases `@components/*`, `@hooks/*`, `@pages/*`)
-- GitHub Actions workflow files (`deploy.yml`)
-- Deploy scripts (`deploy.bat`, `deploy.sh`)
-- `gh-pages` package configuration
-- Bundler/toolchain decisions (CRA → Vite migration, etc.)
-
-**Constraint:** Does not touch React component code or test files.
-
----
-
-### → `lead` (decision required first)
-
-Assign or intercept when the work involves any of:
-- Any change to the core data model (`Item`, `Trip`, `ItemCategory`) — a `decisions.md` entry is **mandatory before** implementation begins
-- Architectural trade-offs or scope prioritisation
-- Fate of dead-code files (`ItemForm.tsx`, `ItemList.tsx`)
-- Cross-cutting tasks that span both application code and tooling
-
----
-
-## Decision Logging Protocol
-
-Before any data model change is implemented:
-
-1. `lead` writes an entry to `decisions.md` (format: date, title, context, decision, impact).
-2. Only after the entry is written does `lead` route to `frontend-engineer`.
-3. `frontend-engineer` delivers code **and** tests in the same PR.
-
----
-
-## Escalation
-
-If any agent is uncertain about scope or authority → escalate to `lead` immediately.
+1. **Eager by default** — spawn all agents who could usefully start work, including anticipatory downstream work.
+2. **Scribe always runs** after substantial work, always as `mode: "background"`. Never blocks.
+3. **Quick facts → coordinator answers directly.** Don't spawn an agent for "what port does the server run on?"
+4. **When two agents could handle it**, pick the one whose domain is the primary concern.
+5. **"Team, ..." → fan-out.** Spawn all relevant agents in parallel as `mode: "background"`.
+6. **Anticipate downstream work.** If a feature is being built, spawn the tester to write test cases from requirements simultaneously.
+7. **Issue-labeled work** — when a `squad:{member}` label is applied to an issue, route to that member. The Lead handles all `squad` (base label) triage.

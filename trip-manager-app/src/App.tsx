@@ -1,38 +1,38 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { TripProvider } from './contexts/TripContext';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { TripProvider } from './context/TripContext';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
+import TripsPage from './pages/TripsPage';
 import CreateTrip from './pages/CreateTrip';
 import TripDetails from './pages/TripDetails';
-import TripsPage from './pages/TripsPage';
 import './styles/globals.css';
+import './styles/components.css';
 
-const basename = process.env.PUBLIC_URL || '';
-
-// Component without router for testing
-export const AppRoutes: React.FC = () => {
+export function AppRoutes() {
   return (
     <>
       <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/trips" element={<TripsPage />} />
-        <Route path="/create-trip" element={<CreateTrip />} />
-        <Route path="/trip/:id" element={<TripDetails />} />
-      </Routes>
+      <main className="app-main">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/trips" element={<TripsPage />} />
+          <Route path="/create-trip" element={<CreateTrip />} />
+          <Route path="/trip/:id" element={<TripDetails />} />
+        </Routes>
+      </main>
     </>
   );
-};
+}
 
-const App: React.FC = () => {
+function App() {
   return (
     <TripProvider>
-      <Router basename={basename}>
+      <BrowserRouter basename={process.env.PUBLIC_URL}>
         <AppRoutes />
-      </Router>
+      </BrowserRouter>
     </TripProvider>
   );
-};
+}
 
 export default App;

@@ -1,0 +1,10 @@
+STDOUT:
+src/__tests__/ImportExport.test.tsx(2,1): error TS1208: 'ImportExport.test.tsx' cannot be compiled under '--isolatedModules' because it is considered a global script file. Add an import, export, or an empty 'export {}' statement to make it a module.
+src/__tests__/PackingList.test.tsx(2,1): error TS1208: 'PackingList.test.tsx' cannot be compiled under '--isolatedModules' because it is considered a global script file. Add an import, export, or an empty 'export {}' statement to make it a module.
+src/__tests__/ProgressBar.test.tsx(2,1): error TS1208: 'ProgressBar.test.tsx' cannot be compiled under '--isolatedModules' because it is considered a global script file. Add an import, export, or an empty 'export {}' statement to make it a module.
+src/__tests__/TripContext.test.tsx(2,1): error TS1208: 'TripContext.test.tsx' cannot be compiled under '--isolatedModules' because it is considered a global script file. Add an import, export, or an empty 'export {}' statement to make it a module.
+src/__tests__/TripList.test.tsx(2,1): error TS1208: 'TripList.test.tsx' cannot be compiled under '--isolatedModules' because it is considered a global script file. Add an import, export, or an empty 'export {}' statement to make it a module.
+
+STDERR:
+
+RC:2

@@ -1,5 +1,10 @@
 {
-  "casting_policy_version": "1.0",
-  "naming_mode": "functional",
-  "note": "TripPacker squad uses functional names (lead, frontend-engineer, platform-engineer) — no universe casting needed for a 3-person engineering team."
+  "version": 1,
+  "universe_allowlist": ["firefly"],
+  "selected_universe": "firefly",
+  "max_agents": 10,
+  "overflow_strategy": "diegetic_expansion",
+  "scribe_exempt": true,
+  "ralph_exempt": true,
+  "copilot_exempt": true
 }

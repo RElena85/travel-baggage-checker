@@ -1,123 +1,73 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import TripForm from '../components/TripForm';
-import { TripProvider } from '../contexts/TripContext';
+import { TripProvider } from '../context/TripContext';
+import TripForm from './TripForm';
+import { localStorageMock } from '../setupTests';
 
-// Test wrapper that provides router and trip context
-const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <MemoryRouter>
+
+beforeEach(() => {
+  localStorageMock.clear();
+});
+
+const renderTripForm = () =>
+  render(
     <TripProvider>
-      {children}
+      <MemoryRouter>
+        <TripForm />
+      </MemoryRouter>
     </TripProvider>
-  </MemoryRouter>
-);
+  );
 
-describe('TripForm Component', () => {
-  const mockOnSave = jest.fn();
-
-  beforeEach(() => {
-    mockOnSave.mockClear();
-  });
-
-  it('should render empty form for new trip', () => {
-    render(
-      <TestWrapper>
-        <TripForm onSave={mockOnSave} />
-      </TestWrapper>
-    );
-
-    expect(screen.getByTestId('trip-name-input')).toHaveValue('');
-    expect(screen.getByTestId('save-trip-button')).toBeInTheDocument();
+describe('TripForm', () => {
+  it('renders all required inputs', () => {
+    renderTripForm();
+    expect(screen.getByTestId('trip-name-input')).toBeInTheDocument();
+    expect(screen.getByTestId('trip-destination-input')).toBeInTheDocument();
+    expect(screen.getByTestId('trip-departure-input')).toBeInTheDocument();
+    expect(screen.getByTestId('new-item-name-input')).toBeInTheDocument();
+    expect(screen.getByTestId('category-select')).toBeInTheDocument();
     expect(screen.getByTestId('add-item-button')).toBeInTheDocument();
   });
 
-  it('should add new item when add button is clicked', async () => {
-    const user = userEvent.setup();
-    render(
-      <TestWrapper>
-        <TripForm onSave={mockOnSave} />
-      </TestWrapper>
-    );
-
-    await act(async () => {
-      await user.type(screen.getByPlaceholderText('e.g., Passport, Phone charger, Sunscreen...'), 'Test Item');
-      await user.click(screen.getByTestId('add-item-button'));
-    });
-
-    await waitFor(() => {
-      expect(screen.getByTestId('item-input-0')).toHaveValue('Test Item');
-    });
+  it('save button is disabled when trip name is empty', () => {
+    renderTripForm();
+    expect(screen.getByTestId('save-trip-button')).toBeDisabled();
   });
 
-  it('should submit form with valid data', async () => {
-    const user = userEvent.setup();
-    render(
-      <TestWrapper>
-        <TripForm onSave={mockOnSave} />
-      </TestWrapper>
-    );
-
-    await act(async () => {
-      await user.type(screen.getByTestId('trip-name-input'), 'Test Trip');
-      await user.type(screen.getByPlaceholderText('e.g., Passport, Phone charger, Sunscreen...'), 'Test Item');
-      await user.click(screen.getByTestId('add-item-button'));
+  it('save button is enabled when trip name is filled', () => {
+    renderTripForm();
+    fireEvent.change(screen.getByTestId('trip-name-input'), {
+      target: { value: 'My Trip' },
     });
-
-    await act(async () => {
-      await user.click(screen.getByTestId('save-trip-button'));
-    });
-
-    expect(mockOnSave).toHaveBeenCalledWith('Test Trip', [{ name: 'Test Item', category: 'otros' }], undefined, undefined);
+    expect(screen.getByTestId('save-trip-button')).not.toBeDisabled();
   });
 
-  it('should not submit with empty trip name', async () => {
-    render(
-      <TestWrapper>
-        <TripForm onSave={mockOnSave} />
-      </TestWrapper>
-    );
-
-    const saveButton = screen.getByTestId('save-trip-button');
-    expect(saveButton).toBeDisabled();
+  it('adds item on button click', () => {
+    renderTripForm();
+    fireEvent.change(screen.getByTestId('new-item-name-input'), {
+      target: { value: 'Passport' },
+    });
+    fireEvent.click(screen.getByTestId('add-item-button'));
+    expect(screen.getByTestId('item-input-0')).toBeInTheDocument();
   });
 
-  it('should filter out empty items on submit', async () => {
-    const user = userEvent.setup();
-    render(
-      <TestWrapper>
-        <TripForm onSave={mockOnSave} />
-      </TestWrapper>
-    );
-
-    await act(async () => {
-      await user.type(screen.getByTestId('trip-name-input'), 'Test Trip');
-      await user.type(screen.getByPlaceholderText('e.g., Passport, Phone charger, Sunscreen...'), 'Valid Item');
-      await user.click(screen.getByTestId('add-item-button'));
-      await user.click(screen.getByTestId('add-item-button')); // Add empty item
-    });
-
-    await act(async () => {
-      await user.click(screen.getByTestId('save-trip-button'));
-    });
-
-    expect(mockOnSave).toHaveBeenCalledWith('Test Trip', [{ name: 'Valid Item', category: 'otros' }], undefined, undefined);
+  it('adds item on Enter key', () => {
+    renderTripForm();
+    const input = screen.getByTestId('new-item-name-input');
+    fireEvent.change(input, { target: { value: 'Toothbrush' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(screen.getByTestId('item-input-0')).toBeInTheDocument();
   });
 
-  it('should trim whitespace from trip name', async () => {
-    const user = userEvent.setup();
-    render(
-      <TestWrapper>
-        <TripForm onSave={mockOnSave} />
-      </TestWrapper>
-    );
-
-    await act(async () => {
-      await user.type(screen.getByTestId('trip-name-input'), '  Trimmed Trip  ');
-      await user.click(screen.getByTestId('save-trip-button'));
+  it('removes item on click', () => {
+    renderTripForm();
+    fireEvent.change(screen.getByTestId('new-item-name-input'), {
+      target: { value: 'Item' },
     });
-
-    expect(mockOnSave).toHaveBeenCalledWith('Trimmed Trip', [], undefined, undefined);
+    fireEvent.click(screen.getByTestId('add-item-button'));
+    fireEvent.click(screen.getByTestId('remove-item-0'));
+    expect(screen.queryByTestId('item-input-0')).not.toBeInTheDocument();
   });
 });
+

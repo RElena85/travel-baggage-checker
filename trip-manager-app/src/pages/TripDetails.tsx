@@ -1,232 +1,182 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTripContext } from '../context/TripContext';
 import EditableItemList from '../components/EditableItemList';
-import { useTripContext } from '../contexts/TripContext';
-import { Item, ItemCategory } from '../types';
 
-const TripDetails: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
-    const { 
-        trips, 
-        updateItemStatus, 
-        updateTripName, 
-        updateItemName, 
-        updateItemTag, 
-        updateItemCategory,
-        removeItemFromTrip, 
-        addItemToTrip,
-        markAllPacked,
-        unpackAll
-    } = useTripContext();
-    const trip = trips.find(t => t.id === id);
-    
-    const [isEditingName, setIsEditingName] = useState(false);
-    const [editedName, setEditedName] = useState('');
+export default function TripDetails() {
+  const { id } = useParams<{ id: string }>();
+  const { getTrip, updateTripName, markAllPacked, unpackAll } = useTripContext();
 
-    if (!trip) {
-        return (
-            <div className="app">
-                <div className="container">
-                    <div className="page">
-                        <div className="page-header">
-                            <h1 className="page-title">🔍 Trip Not Found</h1>
-                            <p className="page-subtitle">The trip you're looking for doesn't exist</p>
-                        </div>
-                        <div className="page-content text-center">
-                            <div className="empty-state">
-                                <div className="empty-state-icon">❓</div>
-                                <h3>Oops! Trip not found</h3>
-                                <p>This trip might have been deleted or the link is incorrect.</p>
-                                <Link to="/" className="btn btn-primary btn-lg mt-6">
-                                    🏠 Back to Home
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+  const [editingName, setEditingName] = useState(false);
+  const [draftName, setDraftName] = useState('');
 
-    const totalItems = trip.items.length;
-    const packedItems = trip.items.filter((item: Item) => item.isIn).length;
-    const returnedItems = trip.items.filter((item: Item) => item.isBack).length;
-    const packedPercentage = totalItems > 0 ? Math.round((packedItems / totalItems) * 100) : 0;
-    const returnedPercentage = totalItems > 0 ? Math.round((returnedItems / totalItems) * 100) : 0;
+  const trip = id ? getTrip(id) : undefined;
 
-    const startEditingName = () => {
-        setIsEditingName(true);
-        setEditedName(trip.name);
-    };
-
-    const saveTripName = () => {
-        if (editedName.trim() && editedName.trim() !== trip.name) {
-            updateTripName(trip.id, editedName.trim());
-        }
-        setIsEditingName(false);
-        setEditedName('');
-    };
-
-    const cancelEditingName = () => {
-        setIsEditingName(false);
-        setEditedName('');
-    };
-
-    const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            saveTripName();
-        } else if (e.key === 'Escape') {
-            cancelEditingName();
-        }
-    };
-
+  if (!trip) {
     return (
-        <div className="app">
-            <div className="container">
-                <div className="page trip-details">
-                    <div className="trip-details-header">
-                        <div className="trip-title-section">
-                            {isEditingName ? (
-                                <div className="trip-name-edit">
-                                    <input
-                                        type="text"
-                                        value={editedName}
-                                        onChange={(e) => setEditedName(e.target.value)}
-                                        onKeyDown={handleKeyPress}
-                                        className="trip-name-input"
-                                        autoFocus
-                                    />
-                                    <div className="trip-name-actions">
-                                        <button onClick={saveTripName} className="btn btn-primary btn-sm">
-                                            ✓ Save
-                                        </button>
-                                        <button onClick={cancelEditingName} className="btn btn-secondary btn-sm">
-                                            ✕ Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="trip-name-display">
-                                    <div className="trip-details-title">{trip.name}</div>
-                                    <button 
-                                        onClick={startEditingName} 
-                                        className="btn-icon edit-name-btn"
-                                        title="Edit trip name"
-                                    >
-                                        ✏️
-                                    </button>
-                                </div>
-                            )}
-                            {trip.destination && (
-                                <div className="trip-details-destination">
-                                    📍 {trip.destination}
-                                    {trip.departureDate && (
-                                        <span className="trip-details-date">
-                                            &nbsp;•&nbsp;✈️ {new Date(trip.departureDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                        </span>
-                                    )}
-                                </div>
-                            )}
-                            {!trip.destination && trip.departureDate && (
-                                <div className="trip-details-destination">
-                                    ✈️ {new Date(trip.departureDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                </div>
-                            )}
-                        </div>
-                        <Link to="/trips" className="back-button">
-                            ← Back to Trips
-                        </Link>
-                    </div>
-
-                    <div className="trip-overview">
-                        <div className="overview-card">
-                            <div className="overview-value total-value">{totalItems}</div>
-                            <div className="overview-label">Total Items</div>
-                        </div>
-                        <div className="overview-card">
-                            <div className="overview-value packed-value">{packedItems}</div>
-                            <div className="overview-label">Packed ({packedPercentage}%)</div>
-                        </div>
-                        <div className="overview-card">
-                            <div className="overview-value returned-value">{returnedItems}</div>
-                            <div className="overview-label">Returned ({returnedPercentage}%)</div>
-                        </div>
-                    </div>
-
-                    <div className="page-content">
-                        {totalItems > 0 && (
-                            <div className="quick-actions-bar">
-                                <button
-                                    onClick={() => markAllPacked(trip.id)}
-                                    className="btn btn-success btn-sm"
-                                    data-testid="mark-all-packed"
-                                    disabled={packedItems === totalItems}
-                                >
-                                    ✅ Mark All Packed
-                                </button>
-                                <button
-                                    onClick={() => unpackAll(trip.id)}
-                                    className="btn btn-secondary btn-sm"
-                                    data-testid="unpack-all"
-                                    disabled={packedItems === 0 && returnedItems === 0}
-                                >
-                                    📦 Reset All
-                                </button>
-                            </div>
-                        )}
-                        <EditableItemList
-                            items={trip.items}
-                            tripId={trip.id}
-                            onUpdateItemStatus={(itemId, field) => updateItemStatus(trip.id, itemId, field)}
-                            onUpdateItemName={(itemId, newName) => updateItemName(trip.id, itemId, newName)}
-                            onUpdateItemTag={(itemId, tag) => updateItemTag(trip.id, itemId, tag)}
-                            onUpdateItemCategory={(itemId, category) => updateItemCategory(trip.id, itemId, category)}
-                            onRemoveItem={(itemId) => removeItemFromTrip(trip.id, itemId)}
-                            onAddItem={(itemName, category) => addItemToTrip(trip.id, itemName, category)}
-                        />
-                        
-                        {totalItems > 0 && (
-                            <div className="mt-8">
-                                <div className="card">
-                                    <div className="card-header">
-                                        <h3 className="card-title">📊 Trip Progress</h3>
-                                    </div>
-                                    <div className="card-content">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <div className="text-sm text-gray-600 mb-2">Packing Progress</div>
-                                                <div className="progress-bar">
-                                                    <div 
-                                                        className="progress-fill"
-                                                        style={{ '--bar-fill': `${packedPercentage}%` } as React.CSSProperties}
-                                                    ></div>
-                                                </div>
-                                                <div className="text-sm text-gray-500 mt-1">
-                                                    Packed: {packedItems}/{totalItems}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div className="text-sm text-gray-600 mb-2">Return Progress</div>
-                                                <div className="progress-bar">
-                                                    <div 
-                                                        className="progress-fill trip-progress-bar-fill--returned"
-                                                        style={{ '--bar-fill': `${returnedPercentage}%` } as React.CSSProperties}
-                                                    ></div>
-                                                </div>
-                                                <div className="text-sm text-gray-500 mt-1">
-                                                    Returned: {returnedItems}/{totalItems} ({returnedPercentage}%)
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </div>
+      <div className="not-found-page">
+        <h1>Trip Not Found</h1>
+        <p>The trip you're looking for doesn't exist.</p>
+        <Link to="/" className="btn-primary">
+          Back to Home
+        </Link>
+      </div>
     );
-};
+  }
 
-export default TripDetails;
+  const totalItems = trip.items.length;
+  const packedCount = trip.items.filter(i => i.isIn).length;
+  const returnedCount = trip.items.filter(i => i.isBack).length;
+  const packedPct = totalItems > 0 ? Math.round((packedCount / totalItems) * 100) : 0;
+  const returnedPct = totalItems > 0 ? Math.round((returnedCount / totalItems) * 100) : 0;
+
+  const allPacked = totalItems > 0 && packedCount === totalItems;
+  const nonePackedOrReturned = packedCount === 0 && returnedCount === 0;
+
+  function startEditName() {
+    setDraftName(trip!.name);
+    setEditingName(true);
+  }
+
+  function saveName() {
+    if (!draftName.trim()) return;
+    updateTripName(trip!.id, draftName.trim());
+    setEditingName(false);
+  }
+
+  function cancelEditName() {
+    setEditingName(false);
+  }
+
+  function handleNameKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') saveName();
+    if (e.key === 'Escape') cancelEditName();
+  }
+
+  return (
+    <div className="trip-details-page">
+      <div className="trip-details-header">
+        <Link to="/trips" className="back-link">
+          ← My Trips
+        </Link>
+        <div className="trip-name-row">
+          {editingName ? (
+            <>
+              <input
+                type="text"
+                className="form-input trip-name-input"
+                value={draftName}
+                onChange={e => setDraftName(e.target.value)}
+                onKeyDown={handleNameKeyDown}
+                autoFocus
+              />
+              <button
+                className="btn-primary"
+                onClick={saveName}
+                data-testid="save-trip-name-btn"
+              >
+                Save
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={cancelEditName}
+                data-testid="cancel-trip-name-btn"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <h1 className="trip-details-title">{trip.name}</h1>
+              <button
+                className="btn-icon"
+                onClick={startEditName}
+                data-testid="edit-trip-name-btn"
+              >
+                ✏️
+              </button>
+            </>
+          )}
+        </div>
+        {trip.destination && (
+          <p className="trip-details-destination">📍 {trip.destination}</p>
+        )}
+        {trip.departureDate && (
+          <p className="trip-details-date">
+            ✈️ Departure: {new Date(trip.departureDate).toLocaleDateString()}
+          </p>
+        )}
+      </div>
+
+      <div className="trip-stats-row">
+        <div className="stat-card">
+          <span className="stat-value">{totalItems}</span>
+          <span className="stat-label">Total Items</span>
+        </div>
+        <div className="stat-card" data-testid="stat-card-packed">
+          <span className="stat-value" data-testid="stat-packed">
+            {packedCount} ({packedPct}%)
+          </span>
+          <span className="stat-label">Packed</span>
+        </div>
+        <div className="stat-card" data-testid="stat-card-returned">
+          <span className="stat-value" data-testid="stat-returned">
+            {returnedCount} ({returnedPct}%)
+          </span>
+          <span className="stat-label">Returned</span>
+        </div>
+      </div>
+
+      {totalItems > 0 && (
+        <div className="quick-actions">
+          <button
+            className="btn-primary"
+            onClick={() => markAllPacked(trip.id)}
+            disabled={allPacked}
+            data-testid="mark-all-packed"
+          >
+            Mark All Packed
+          </button>
+          <button
+            className="btn-secondary"
+            onClick={() => unpackAll(trip.id)}
+            disabled={nonePackedOrReturned}
+            data-testid="unpack-all"
+          >
+            Reset All
+          </button>
+        </div>
+      )}
+
+      <EditableItemList tripId={trip.id} items={trip.items} />
+
+      {totalItems > 0 && (
+        <div className="trip-progress-section" data-testid="stat-card-progress">
+          <h2 className="section-title">Trip Progress</h2>
+          <div className="progress-bar-row">
+            <span className="progress-label">Packing</span>
+            <div className="trip-progress-bar-track">
+              <div
+                className="trip-progress-bar-fill"
+                style={{ '--bar-fill': `${packedPct}%` } as React.CSSProperties}
+              />
+            </div>
+            <span className="progress-count">Packed: {packedCount}/{totalItems}</span>
+          </div>
+          <div className="progress-bar-row">
+            <span className="progress-label">Return</span>
+            <div className="trip-progress-bar-track">
+              <div
+                className="trip-progress-bar-fill trip-progress-bar-fill--returned"
+                style={{ '--bar-fill': `${returnedPct}%` } as React.CSSProperties}
+              />
+            </div>
+            <span className="progress-count">
+              Returned: {returnedCount}/{totalItems} ({returnedPct}%)
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

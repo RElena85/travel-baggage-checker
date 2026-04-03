@@ -1,80 +1,53 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useTripContext } from '../contexts/TripContext';
-import { Item } from '../types';
-import '../styles/components.css';
+import { useTripContext } from '../context/TripContext';
 
-const Home: React.FC = () => {
-    const { trips } = useTripContext();
+export default function Home() {
+  const { trips } = useTripContext();
 
-    return (
-        <div className="app">
-            <div className="container">
-                <div className="page">
-                    <div className="home-header">
-                        <h1 className="home-title">✈️ TripPacker</h1>
-                        <p className="home-description">
-                            Your smart travel companion for stress-free packing and unpacking
-                        </p>
-                    </div>
-                    
-                    <div className="page-content">
-                        <div className="menu-options">
-                            <div className="menu-grid">
-                                <Link to="/trips" className="menu-card">
-                                    <div className="menu-card-icon">🧳</div>
-                                    <h3 className="menu-card-title">My Trips</h3>
-                                    <p className="menu-card-description">
-                                        View and manage all your trips
-                                    </p>
-                                    <div className="menu-card-badge">
-                                        {trips.length} trip{trips.length !== 1 ? 's' : ''}
-                                    </div>
-                                </Link>
+  const totalItems = trips.reduce((acc, t) => acc + t.items.length, 0);
+  const packedItems = trips.reduce((acc, t) => acc + t.items.filter(i => i.isIn).length, 0);
 
-                                <Link to="/create-trip" className="menu-card">
-                                    <div className="menu-card-icon">➕</div>
-                                    <h3 className="menu-card-title">New Trip</h3>
-                                    <p className="menu-card-description">
-                                        Create a new travel adventure
-                                    </p>
-                                    <div className="menu-card-action">
-                                        Start planning →
-                                    </div>
-                                </Link>
-                            </div>
-                        </div>
+  return (
+    <div className="home-page">
+      <div className="home-hero">
+        <h1 className="home-title">✈️ TripPacker</h1>
+        <p className="home-subtitle">Your personal travel packing companion</p>
+      </div>
 
-                        {trips.length > 0 && (
-                            <div className="quick-stats">
-                                <h3>Quick Stats</h3>
-                                <div className="stats-grid">
-                                    <div className="stat-card">
-                                        <span className="stat-number">{trips.length}</span>
-                                        <span className="stat-label">Total Trips</span>
-                                    </div>
-                                    <div className="stat-card">
-                                        <span className="stat-number">
-                                            {trips.reduce((sum, trip) => sum + trip.items.length, 0)}
-                                        </span>
-                                        <span className="stat-label">Total Items</span>
-                                    </div>
-                                    <div className="stat-card">
-                                        <span className="stat-number">
-                                            {trips.reduce((sum, trip) => 
-                                                sum + trip.items.filter((item: Item) => item.isIn).length, 0
-                                            )}
-                                        </span>
-                                        <span className="stat-label">Items Packed</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
+      <div className="home-menu-grid">
+        <Link to="/trips" className="home-menu-card">
+          <span className="home-menu-icon">🧳</span>
+          <h2 className="home-menu-title">My Trips</h2>
+          <p className="home-menu-desc">View and manage all your trips</p>
+          {trips.length > 0 && (
+            <span className="home-menu-badge">{trips.length} trips</span>
+          )}
+        </Link>
+        <Link to="/create-trip" className="home-menu-card home-menu-card--cta">
+          <span className="home-menu-icon">➕</span>
+          <h2 className="home-menu-title">New Trip</h2>
+          <p className="home-menu-desc">Start planning your next adventure</p>
+          <span className="home-menu-cta-text">Start planning →</span>
+        </Link>
+      </div>
+
+      {trips.length > 0 && (
+        <div className="home-stats">
+          <div className="stat-card">
+            <span className="stat-value">{trips.length}</span>
+            <span className="stat-label">Total Trips</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-value">{totalItems}</span>
+            <span className="stat-label">Total Items</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-value">{packedItems}</span>
+            <span className="stat-label">Items Packed</span>
+          </div>
         </div>
-    );
-};
-
-export default Home;
+      )}
+    </div>
+  );
+}

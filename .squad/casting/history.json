@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "assignments": [
+    {
+      "assignment_id": "trippacker-2026-03-28",
+      "project": "travel-baggage-checker",
+      "owner": "Relena",
+      "universe": "firefly",
+      "timestamp": "2026-03-28T09:34:44Z",
+      "agents": [
+        { "name": "Mal", "role": "Lead" },
+        { "name": "Kaylee", "role": "Frontend Dev" },
+        { "name": "Zoe", "role": "Tester / QA" },
+        { "name": "Wash", "role": "Platform Eng" }
+      ]
+    }
+  ]
+}

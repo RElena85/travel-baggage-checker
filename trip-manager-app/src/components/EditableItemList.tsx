@@ -1,339 +1,290 @@
-import React, { useState } from 'react';
-import { Item, ItemCategory, ITEM_CATEGORIES } from '../types';
+import React, { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import { useTripContext } from '../context/TripContext';
+import { Item, ItemCategory } from '../types';
+import { ITEM_CATEGORIES } from '../utils/helpers';
 
 interface EditableItemListProps {
-    items: Item[];
-    tripId: string;
-    onUpdateItemStatus: (itemId: string, field: 'isIn' | 'isBack') => void;
-    onUpdateItemName: (itemId: string, newName: string) => void;
-    onUpdateItemTag: (itemId: string, tag: string) => void;
-    onUpdateItemCategory: (itemId: string, category: ItemCategory) => void;
-    onRemoveItem: (itemId: string) => void;
-    onAddItem: (itemName: string, category: ItemCategory) => void;
+  tripId: string;
+  items: Item[];
 }
 
-const EditableItemList: React.FC<EditableItemListProps> = ({
-    items,
-    tripId,
-    onUpdateItemStatus,
-    onUpdateItemName,
-    onUpdateItemTag,
-    onUpdateItemCategory,
-    onRemoveItem,
-    onAddItem
-}) => {
-    const [editingItem, setEditingItem] = useState<string | null>(null);
-    const [editingName, setEditingName] = useState('');
-    const [editingTag, setEditingTag] = useState('');
-    const [editingCategory, setEditingCategory] = useState<ItemCategory>('otros');
-    const [newItemName, setNewItemName] = useState('');
-    const [newItemCategory, setNewItemCategory] = useState<ItemCategory>('otros');
-    const [groupBy, setGroupBy] = useState<'category' | 'tag' | 'none'>('category');
-    const [filterCategory, setFilterCategory] = useState<ItemCategory | 'all'>('all');
+type GroupBy = 'category' | 'tag' | 'none';
 
-    // Get unique tags (keeping backward compatibility)
-    const uniqueTags = Array.from(new Set(items.map(item => item.tag).filter(Boolean)));
+export default function EditableItemList({ tripId, items }: EditableItemListProps) {
+  const {
+    updateItemStatus,
+    addItemToTrip,
+    removeItemFromTrip,
+    updateItemName,
+    updateItemTag,
+    updateItemCategory,
+  } = useTripContext();
 
-    // Group items by category or tag
-    const groupedItems = React.useMemo(() => {
-        if (groupBy === 'none') {
-            return { 'All Items': items };
-        }
+  const [groupBy, setGroupBy] = useState<GroupBy>('category');
+  const [filterCategory, setFilterCategory] = useState<ItemCategory | 'all'>('all');
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemCategory, setNewItemCategory] = useState<ItemCategory>('otros');
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editCategory, setEditCategory] = useState<ItemCategory>('otros');
+  const [editTag, setEditTag] = useState('');
 
-        if (groupBy === 'category') {
-            const groups: { [key: string]: Item[] } = {};
-            
-            Object.entries(ITEM_CATEGORIES).forEach(([categoryKey, categoryInfo]) => {
-                const categoryItems = items.filter(item => 
-                    item.category === categoryKey && 
-                    (filterCategory === 'all' || filterCategory === categoryKey)
-                );
-                if (categoryItems.length > 0) {
-                    groups[categoryKey] = categoryItems;
-                }
-            });
+  const editInputRef = useRef<HTMLInputElement>(null);
 
-            return groups;
-        }
+  useEffect(() => {
+    if (editingItemId && editInputRef.current) {
+      editInputRef.current.focus();
+    }
+  }, [editingItemId]);
 
-        // Tag grouping (legacy support)
-        const groups: { [key: string]: Item[] } = {};
-        const untaggedItems = items.filter(item => !item.tag);
-        
-        if (untaggedItems.length > 0) {
-            groups['Untagged'] = untaggedItems;
-        }
+  const categoryOrder = Object.keys(ITEM_CATEGORIES) as ItemCategory[];
+  const existingTags = Array.from(new Set(items.map(i => i.tag).filter(Boolean))) as string[];
 
-        uniqueTags.forEach(tag => {
-            const tagItems = items.filter(item => item.tag === tag);
-            if (tagItems.length > 0) {
-                groups[tag!] = tagItems;
-            }
-        });
+  function handleAddItem() {
+    if (!newItemName.trim()) return;
+    addItemToTrip(tripId, newItemName.trim(), newItemCategory);
+    setNewItemName('');
+    setNewItemCategory('otros');
+  }
 
-        return groups;
-    }, [items, groupBy, filterCategory, uniqueTags]);
+  function handleAddKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddItem();
+    }
+  }
 
-    const startEditing = (item: Item) => {
-        setEditingItem(item.id);
-        setEditingName(item.name);
-        setEditingTag(item.tag || '');
-        setEditingCategory(item.category);
-    };
+  function startEdit(item: Item) {
+    setEditingItemId(item.id);
+    setEditName(item.name);
+    setEditCategory(item.category);
+    setEditTag(item.tag || '');
+  }
 
-    const saveEdit = () => {
-        if (editingItem && editingName.trim()) {
-            onUpdateItemName(editingItem, editingName.trim());
-            onUpdateItemTag(editingItem, editingTag.trim());
-            onUpdateItemCategory(editingItem, editingCategory);
-            setEditingItem(null);
-            setEditingName('');
-            setEditingTag('');
-            setEditingCategory('otros');
-        }
-    };
+  function saveEdit() {
+    if (!editName.trim() || !editingItemId) return;
+    updateItemName(tripId, editingItemId, editName.trim());
+    updateItemCategory(tripId, editingItemId, editCategory);
+    updateItemTag(tripId, editingItemId, editTag);
+    setEditingItemId(null);
+  }
 
-    const cancelEdit = () => {
-        setEditingItem(null);
-        setEditingName('');
-        setEditingTag('');
-        setEditingCategory('otros');
-    };
+  function cancelEdit() {
+    setEditingItemId(null);
+  }
 
-    const handleAddItem = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (newItemName.trim()) {
-            onAddItem(newItemName.trim(), newItemCategory);
-            setNewItemName('');
-        }
-    };
+  function handleEditKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') saveEdit();
+    if (e.key === 'Escape') cancelEdit();
+  }
 
-    const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            saveEdit();
-        } else if (e.key === 'Escape') {
-            cancelEdit();
-        }
-    };
+  // Filter
+  const filteredItems =
+    groupBy === 'category' && filterCategory !== 'all'
+      ? items.filter(i => i.category === filterCategory)
+      : items;
 
-    return (
-        <div className="editable-item-list">
-            {/* Controls */}
-            <div className="item-controls mb-4">
-                <div className="flex flex-wrap gap-4 items-center">
-                    <div className="flex items-center gap-2">
-                        <label className="text-sm font-medium">Group by:</label>
-                        <select 
-                            value={groupBy} 
-                            onChange={(e) => setGroupBy(e.target.value as 'category' | 'tag' | 'none')}
-                            className="form-select"
-                        >
-                            <option value="category">Category</option>
-                            <option value="tag">Tag</option>
-                            <option value="none">None</option>
-                        </select>
-                    </div>
+  // Group
+  function buildGroups(): Array<{ key: string; label: string; items: Item[] }> {
+    if (groupBy === 'none') {
+      return [{ key: 'all', label: 'All Items', items: filteredItems }];
+    }
+    if (groupBy === 'category') {
+      return categoryOrder
+        .map(cat => ({
+          key: cat,
+          label: `${ITEM_CATEGORIES[cat].icon} ${ITEM_CATEGORIES[cat].label}`,
+          items: filteredItems.filter(i => i.category === cat),
+        }))
+        .filter(g => g.items.length > 0);
+    }
+    // group by tag
+    const tagged: Record<string, Item[]> = {};
+    const untagged: Item[] = [];
+    filteredItems.forEach(item => {
+      if (item.tag) {
+        if (!tagged[item.tag]) tagged[item.tag] = [];
+        tagged[item.tag].push(item);
+      } else {
+        untagged.push(item);
+      }
+    });
+    const groups = Object.entries(tagged).map(([tag, its]) => ({
+      key: tag,
+      label: `🏷️ ${tag}`,
+      items: its,
+    }));
+    if (untagged.length > 0) {
+      groups.push({ key: 'untagged', label: 'Untagged', items: untagged });
+    }
+    return groups;
+  }
 
-                    {groupBy === 'category' && (
-                        <div className="flex items-center gap-2">
-                            <label className="text-sm font-medium">Filter Category:</label>
-                            <select 
-                                value={filterCategory} 
-                                onChange={(e) => setFilterCategory(e.target.value as ItemCategory | 'all')}
-                                className="form-select"
-                            >
-                                <option value="all">All Categories</option>
-                                {Object.entries(ITEM_CATEGORIES).map(([key, category]) => (
-                                    <option key={key} value={key}>
-                                        {category.icon} {category.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-                </div>
+  const groups = buildGroups();
+
+  return (
+    <div className="editable-item-list">
+      <div className="item-list-controls">
+        <div className="control-group">
+          <label className="form-label">Group by</label>
+          <select
+            className="form-select"
+            value={groupBy}
+            onChange={e => setGroupBy(e.target.value as GroupBy)}
+            data-testid="group-by-select"
+          >
+            <option value="category">Category</option>
+            <option value="tag">Tag</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+        {groupBy === 'category' && (
+          <div className="control-group">
+            <label className="form-label">Filter Category</label>
+            <select
+              className="form-select"
+              value={filterCategory}
+              onChange={e => setFilterCategory(e.target.value as ItemCategory | 'all')}
+              data-testid="filter-category-select"
+            >
+              <option value="all">All Categories</option>
+              {categoryOrder.map(cat => (
+                <option key={cat} value={cat}>
+                  {ITEM_CATEGORIES[cat].icon} {ITEM_CATEGORIES[cat].label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
+      <div className="add-item-row">
+        <input
+          type="text"
+          className="form-input"
+          placeholder="Add item..."
+          value={newItemName}
+          onChange={e => setNewItemName(e.target.value)}
+          onKeyDown={handleAddKeyDown}
+          data-testid="new-item-input"
+        />
+        <select
+          className="form-select"
+          value={newItemCategory}
+          onChange={e => setNewItemCategory(e.target.value as ItemCategory)}
+        >
+          {categoryOrder.map(cat => (
+            <option key={cat} value={cat}>
+              {ITEM_CATEGORIES[cat].icon} {ITEM_CATEGORIES[cat].label}
+            </option>
+          ))}
+        </select>
+        <button type="button" className="btn-secondary" onClick={handleAddItem}>
+          Add
+        </button>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="empty-state-text">📦 No items yet — Add your first item</p>
+      ) : (
+        groups.map(group => (
+          <div key={group.key} className="item-group">
+            <div className="item-group-header">
+              <span>{group.label}</span>
+              <span className="item-group-count">{group.items.length}</span>
             </div>
-
-            {/* Add new item form */}
-            <form onSubmit={handleAddItem} className="mb-6">
-                <div className="flex gap-2">
+            {group.items.map(item => (
+              <div
+                key={item.id}
+                className={`item-row${item.isIn ? ' packed' : ''}`}
+              >
+                {editingItemId === item.id ? (
+                  <div className="item-edit-row">
                     <input
-                        type="text"
-                        value={newItemName}
-                        onChange={(e) => setNewItemName(e.target.value)}
-                        placeholder="Add new item..."
-                        className="form-input flex-1"
+                      ref={editInputRef}
+                      type="text"
+                      className="form-input"
+                      value={editName}
+                      onChange={e => setEditName(e.target.value)}
+                      onKeyDown={handleEditKeyDown}
                     />
                     <select
-                        value={newItemCategory}
-                        onChange={(e) => setNewItemCategory(e.target.value as ItemCategory)}
-                        className="form-select"
+                      className="form-select"
+                      value={editCategory}
+                      onChange={e => setEditCategory(e.target.value as ItemCategory)}
                     >
-                        {Object.entries(ITEM_CATEGORIES).map(([key, category]) => (
-                            <option key={key} value={key}>
-                                {category.icon} {category.label}
-                            </option>
-                        ))}
+                      {categoryOrder.map(cat => (
+                        <option key={cat} value={cat}>
+                          {ITEM_CATEGORIES[cat].icon} {ITEM_CATEGORIES[cat].label}
+                        </option>
+                      ))}
                     </select>
-                    <button type="submit" className="btn btn-primary">
-                        ➕ Add
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Tag (optional)"
+                      value={editTag}
+                      onChange={e => setEditTag(e.target.value)}
+                      list="existing-tags"
+                    />
+                    <datalist id="existing-tags">
+                      {existingTags.map(tag => (
+                        <option key={tag} value={tag} />
+                      ))}
+                    </datalist>
+                    <button className="btn-primary" onClick={saveEdit}>
+                      Save
                     </button>
-                </div>
-            </form>
-
-            {/* Items grouped display */}
-            {Object.entries(groupedItems).map(([groupName, groupItems]) => {
-                const categoryInfo = ITEM_CATEGORIES[groupName as ItemCategory];
-                
-                return (
-                    <div key={groupName} className="item-category-group">
-                        {groupBy !== 'none' && (
-                            <div className="item-category-header">
-                                <h3 className="group-title">
-                                    {categoryInfo ? (
-                                        <>
-                                            <span className="category-icon">{categoryInfo.icon}</span>
-                                            <span className="category-label">{categoryInfo.label}</span>
-                                        </>
-                                    ) : groupName === 'Untagged' ? (
-                                        '📦 Untagged Items'
-                                    ) : (
-                                        `🏷️ ${groupName}`
-                                    )}
-                                    <span className="group-count">({groupItems.length})</span>
-                                </h3>
-                            </div>
-                        )}
-
-                        <div className="item-rows">
-                            {groupItems.map((item) => (
-                                <div key={item.id} className="item-card">
-                                    <div className="item-checkboxes">
-                                        <label className="checkbox-container">
-                                            <input
-                                                type="checkbox"
-                                                checked={item.isIn}
-                                                onChange={() => onUpdateItemStatus(item.id, 'isIn')}
-                                                data-testid={`item-${item.id}-in`}
-                                            />
-                                            <span className="checkmark in-checkmark"></span>
-                                            <span className="checkbox-label">Packed</span>
-                                        </label>
-
-                                        <label className="checkbox-container">
-                                            <input
-                                                type="checkbox"
-                                                checked={item.isBack}
-                                                onChange={() => onUpdateItemStatus(item.id, 'isBack')}
-                                                data-testid={`item-${item.id}-back`}
-                                            />
-                                            <span className="checkmark back-checkmark"></span>
-                                            <span className="checkbox-label">Returned</span>
-                                        </label>
-                                    </div>
-
-                                    <div className="item-content">
-                                        {editingItem === item.id ? (
-                                            <div className="item-edit-form">
-                                                <input
-                                                    type="text"
-                                                    value={editingName}
-                                                    onChange={(e) => setEditingName(e.target.value)}
-                                                    onKeyDown={handleKeyPress}
-                                                    className="form-input mb-2"
-                                                    placeholder="Item name"
-                                                    autoFocus
-                                                />
-                                                <select
-                                                    value={editingCategory}
-                                                    onChange={(e) => setEditingCategory(e.target.value as ItemCategory)}
-                                                    className="form-select mb-2"
-                                                >
-                                                    {Object.entries(ITEM_CATEGORIES).map(([key, cat]) => (
-                                                        <option key={key} value={key}>
-                                                            {cat.icon} {cat.label}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <input
-                                                    type="text"
-                                                    value={editingTag}
-                                                    onChange={(e) => setEditingTag(e.target.value)}
-                                                    onKeyDown={handleKeyPress}
-                                                    className="form-input mb-2"
-                                                    placeholder="Tag (optional)"
-                                                    list="existing-tags"
-                                                />
-                                                <datalist id="existing-tags">
-                                                    {uniqueTags.map(tag => (
-                                                        <option key={tag} value={tag} />
-                                                    ))}
-                                                </datalist>
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={saveEdit}
-                                                        className="btn btn-primary btn-sm"
-                                                    >
-                                                        ✓ Save
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={cancelEdit}
-                                                        className="btn btn-secondary btn-sm"
-                                                    >
-                                                        ✕ Cancel
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="item-display">
-                                                <div className="item-name">{item.name}</div>
-                                                <div className="item-meta">
-                                                    {ITEM_CATEGORIES[item.category] && (
-                                                        <span className="item-category">
-                                                            {ITEM_CATEGORIES[item.category].icon} {ITEM_CATEGORIES[item.category].label}
-                                                        </span>
-                                                    )}
-                                                    {item.tag && (
-                                                        <span className="item-tag">🏷️ {item.tag}</span>
-                                                    )}
-                                                </div>
-                                                <div className="item-actions">
-                                                    <button
-                                                        onClick={() => startEditing(item)}
-                                                        className="btn-icon"
-                                                        title="Edit item"
-                                                    >
-                                                        ✏️
-                                                    </button>
-                                                    <button
-                                                        onClick={() => onRemoveItem(item.id)}
-                                                        className="btn-icon btn-danger"
-                                                        title="Remove item"
-                                                    >
-                                                        🗑️
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                );
-            })}
-
-            {items.length === 0 && (
-                <div className="empty-state">
-                    <div className="empty-state-icon">📦</div>
-                    <h3>No items yet</h3>
-                    <p>Add your first item to get started!</p>
-                </div>
-            )}
-        </div>
-    );
-};
-
-export default EditableItemList;
+                    <button className="btn-secondary" onClick={cancelEdit}>
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      type="checkbox"
+                      checked={item.isIn}
+                      onChange={() => updateItemStatus(tripId, item.id, 'isIn')}
+                      data-testid={`item-${item.id}-in`}
+                      title="Packed"
+                    />
+                    <input
+                      type="checkbox"
+                      checked={item.isBack}
+                      onChange={() => updateItemStatus(tripId, item.id, 'isBack')}
+                      data-testid={`item-${item.id}-back`}
+                      title="Returned"
+                    />
+                    <span className="item-name">{item.name}</span>
+                    <span
+                      className="category-badge"
+                      style={{ backgroundColor: ITEM_CATEGORIES[item.category].color } as React.CSSProperties}
+                    >
+                      {ITEM_CATEGORIES[item.category].icon}{' '}
+                      {ITEM_CATEGORIES[item.category].label}
+                    </span>
+                    {item.tag && <span className="tag-badge">{item.tag}</span>}
+                    <button
+                      className="btn-icon"
+                      onClick={() => startEdit(item)}
+                      title="Edit"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      className="btn-icon btn-icon-remove"
+                      onClick={() => removeItemFromTrip(tripId, item.id)}
+                      title="Remove"
+                    >
+                      ✕
+                    </button>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
